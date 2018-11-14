@@ -301,7 +301,7 @@ class Analyser(object):
             
         if len(centre) >0:
             
-            print(labels)
+            print(self.active_labels)
             av_intens = np.average(self.clips[self.active_labels == label][0][centre[0]-4:centre[0]+4,centre[1]-4:centre[1]+4])
             print(av_intens)
             try:
