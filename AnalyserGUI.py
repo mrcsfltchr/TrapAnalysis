@@ -11,17 +11,15 @@ from qtpy import QtGui,QtWidgets,QtCore
 from qtpy.QtWidgets import QWidget,QMainWindow, QApplication,QPushButton,QComboBox,QProgressBar,QFileDialog, QGridLayout, QLabel,QLineEdit,QMessageBox
 from PyQt5.QtCore import pyqtSignal,QThread
 from matplotlib import pyplot as plt
-import tifffile as tf
-import scipy
+
 from trapanalysis import TrapGetter
 from Analyser import Analyser
 from AnnotatedVidViewer import TrapViewer
 import sys
 import os
 import time
-import threading
-from threading import Thread
-import _thread
+
+
 import qimage2ndarray as qnd
 from QtImageViewer import QtImageViewer, handleLeftClick
 from SingleVesViewer import SingleVesViewer
@@ -29,9 +27,10 @@ from AnalysisLauncher import AnalysisLauncher
 import pandas as pd
 from savebox import SaveBox,LoadBox as lb
 
-from DirectionalHeatImage import DirectionalHeatMap
+from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 class MW(QtWidgets.QMainWindow):
     
+
     close_signal = pyqtSignal()
     
     def __init__(self,mode = 'standard'):
@@ -55,6 +54,7 @@ class MW(QtWidgets.QMainWindow):
 
         self.close_signal.emit()
 
+        super().close()
 
 class AnalyserPanel(QWidget):
     
@@ -279,7 +279,7 @@ class AnalyserPanel(QWidget):
             print('worked')
             self.mythread.started.connect(self.myworker.run)
             self.myworker.sig1.connect(self.monitorprocess)
-            
+            self.myworker.sig1.connect(self.mythread.quit)
             self.mythread.start()
             
             
@@ -501,12 +501,32 @@ class AnalyserPanel(QWidget):
     
     def create_directional_heat_map(self):
             print(self.analyser.t0frameNo)
-            DHM = DirectionalHeatMap(self.analyser.frames[self.analyser.t0frameNo,:,:],self.analyser.mask,self.analyser.trapgetter.labels,self.analyser.persisting_times)
+            ''' DHM = DirectionalHeatMap(self.analyser.frames[self.analyser.t0frameNo,:,:],self.analyser.mask,self.analyser.trapgetter.labels,self.analyser.persisting_times)
             DHM.colourscalegenerator()
             
             DHM.give_heat2img()
             DHM.show_image()
+            
+            '''
 
+            DHM =DirectionalHMBox()
+
+            active_trap_labels = np.array(list(self.analyser.persisting_times.keys())).astype(int)
+            trap_indices = np.searchsorted(self.analyser.trapgetter.labels,active_trap_labels)
+            
+            print(trap_indices)
+            
+            traps = np.array(self.analyser.trapgetter.trap_positions)[trap_indices,:]
+            
+            print(traps)
+            
+            DHM.canvas.update_data(traps,self.analyser.persisting_times)
+            DHM.canvas.colourscalegenerator()
+            DHM.canvas.give_colours_to_traps()
+            DHM.canvas.update_axes()
+
+
+            DHM.show()
 
 class VideoViewerControl(QtWidgets.QWidget):
     def __init__(self):

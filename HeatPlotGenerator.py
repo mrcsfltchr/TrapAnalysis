@@ -49,7 +49,7 @@ class HeatPlotGenerator(object):
         print('Axes aspect ', self.ax.get_aspect())
     
         self.ax.set_xticklabels(minutes)
-        self.ax.text(0.8,0.8,'No of Vesicles shown is: '+ str(VesicleCount),fontsize = 8,color = 'white',transform = self.ax.transAxes)
+        self.fig.text(0.7,0.9,'V No.: '+ str(VesicleCount),fontsize = 6,color = 'white',transform = self.ax.transAxes)
         
         '''
         locs = self.ax.xaxis.get_major_ticks()
