@@ -403,6 +403,11 @@ class Analyser(object):
             
             
     def heat_data_generator(self):
+
+        #first make sure heat data is array
+        
+        self.heat_data = np.array([])
+        
         maxlen = -1
         for key in self.bg_sub_intensity_trace.keys():
             print(key)

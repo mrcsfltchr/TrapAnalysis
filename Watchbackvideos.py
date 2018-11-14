@@ -16,6 +16,7 @@ from qtpy.QtWidgets import QWidget,QApplication,QSlider,QMainWindow,QLabel,QGrid
 from qtpy.QtCore import QTimer
 import numpy as np
 import sys
+import os
 
 class  livestream(QWidget):
     i = 0
@@ -36,7 +37,7 @@ class  livestream(QWidget):
             self.videobox.activeframe = self.video[0]
             self.videobox.maxintens = np.max(self.video)
         else:
-            self.videobox.activeframe = np.loadtxt('/Users/MarcusF/Desktop/TrapAnalysis/defaultimage.txt')
+            self.videobox.activeframe = np.loadtxt(os.getcwd() + '/defaultimage.txt')
             print(self.videobox.activeframe.shape)
             self.videobox.maxintens = np.max(self.videobox.activeframe)
 

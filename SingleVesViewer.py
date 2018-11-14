@@ -172,10 +172,10 @@ class SingleVesViewer(QtWidgets.QWidget):
 
         else:
             self.ydata['Area'] = self.ydataA[lbl]
-            self.compare_ydata['Area'] = self.compare_ydataA[lbl]
+
             
             self.ydata['Intensity'] = self.ydataI[lbl]
-            self.compare_ydata['Intensity'] = self.compare_ydataI[lbl]
+
             
             self.params['Area'] = ['Time since t0/s','Area within Vesicle/Pixels' ]
             self.params['Intensity'] = ['Time since t0/s', 'Average Intensity within Vesicle/a.u.']
@@ -183,9 +183,14 @@ class SingleVesViewer(QtWidgets.QWidget):
             self.xdata['Area'] = 0.5*np.arange(len(self.ydataA[lbl]))
             self.xdata['Intensity'] = 0.5*np.arange(len(self.ydataI[lbl]))
             
-            self.compare_xdata['Area'] = 0.5*np.arange(len(self.compare_ydataA[lbl]))
-            self.compare_xdata['Intensity'] = 0.5*np.arange(len(self.compare_ydataI[lbl]))
-                                                   
+            if self.compare_ydataA and self.compare_ydataI is not None:
+                self.compare_xdata['Area'] = 0.5*np.arange(len(self.compare_ydataA[lbl]))
+                self.compare_xdata['Intensity'] = 0.5*np.arange(len(self.compare_ydataI[lbl]))
+                self.compare_ydata['Area'] = self.compare_ydataA[lbl]
+                self.compare_ydata['Intensity'] = self.compare_ydataI[lbl]
+            
+            
+            
             self.plotter_with_border.plotter.plotIAforaves(self.xdata,self.ydata,self.params,compare_xdata = self.compare_xdata,compare_ydata = self.compare_ydata)
         
         
