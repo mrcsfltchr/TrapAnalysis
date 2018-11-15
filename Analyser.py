@@ -472,7 +472,8 @@ class Analyser(object):
     def get_heat_plot(self):
         
         self.HPG.generate(self.times,self.heat_data_ordered,'Plot of the fluorescent intensities of trapped vesicles\n against time after being subject to the drug',self.heat_data_ordered.shape[0])
-        
+
+
         
 if __name__ == '__main__':
     

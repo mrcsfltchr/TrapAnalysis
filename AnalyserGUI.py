@@ -28,7 +28,9 @@ import pandas as pd
 from savebox import SaveBox,LoadBox as lb
 
 from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
+from SingleVesViewer import saveboxview
 class MW(QtWidgets.QMainWindow):
+    
     
 
     close_signal = pyqtSignal()
@@ -207,6 +209,8 @@ class AnalyserPanel(QWidget):
             self.sv.delete.clicked.connect(self.delete_vesicle_and)
             self.sv.interact_display.accepted.connect(self.get_heat_plot)
 
+            self.sv.save_heat.clicked.connect(self.prepare_heat_data4save)
+            
             self.sv.proceed_to_directional_query.accepted.connect(self.create_persisting_times)
         if self.analyser.centres is not None:
             self.sv.centres = self.analyser.centres
@@ -433,6 +437,7 @@ class AnalyserPanel(QWidget):
             #Add connections to heat plot generator from buttons in the single vesicle viewer
             self.sv.delete.clicked.connect(self.delete_vesicle_and)
             self.sv.interact_display.accepted.connect(self.get_heat_plot)
+            self.sv.save_heat.clicked.connect(self.prepare_heat_data4save)
             #Add connection to directional heat_plot_gen
             
             
@@ -528,6 +533,26 @@ class AnalyserPanel(QWidget):
 
             DHM.show()
 
+    def prepare_heat_data4save(self):
+
+        #first make sure the heat data has been calculated
+
+        if self.analyser.heat_data.shape[0] ==0:
+            self.msgbox.setText('No Heat Plot Data detected.. Make sure you have had a look at the plot')
+            self.msgbox.exec_()
+
+        else:
+            
+            #create data dictionary and then pass it to the savebox
+            data = {}
+            data['times'] = self.analyser.times
+            data['heat'] = self.analyser.heat_data
+            
+            self.HeatSave = saveboxview(data)
+            
+            
+            
+            
 class VideoViewerControl(QtWidgets.QWidget):
     def __init__(self):
         QtWidgets.QWidget.__init__(self)

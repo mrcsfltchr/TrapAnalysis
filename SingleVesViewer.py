@@ -5,7 +5,7 @@ import qimage2ndarray as qnd
 import numpy as np
 from PyQt5.QtCore import pyqtSignal
 from SingleVesPlotter import Plotter
-
+import os
 
 class SingleVesViewer(QtWidgets.QWidget):
     def __init__(self,frames,traps = None,labels= None,box_dimensions = None,mode = 'standard'):
@@ -110,6 +110,10 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         self.reload_with_centres.clicked.connect(self.include_centres)
         
+        #include button for saving heat data
+        
+        self.save_heat = QtWidgets.QPushButton('Save Heat Plot Data')
+        
         
         self.lyt.addWidget(self.label_select_lbl,2,0)
         self.lyt.addWidget(self.label_select,3,0)
@@ -119,6 +123,8 @@ class SingleVesViewer(QtWidgets.QWidget):
         self.lyt.addWidget(self.plotter_with_border,0,0)
         self.lyt.addWidget(self.plot_label_btn,1,0)
         self.lyt.addWidget(self.make_heat,4,1)
+        self.lyt.addWidget(self.save_heat,5,1)
+        
         self.lyt.addWidget(self.delete,3,1)
         self.setLayout(self.lyt)
     
@@ -309,6 +315,59 @@ class SingleVesViewer(QtWidgets.QWidget):
         return np.vstack((coords[0].flatten(),coords[1].flatten()))
 
 
+            
+
+                           
+                           
+class saveboxview(QtWidgets.QWidget):
+
+    def __init__(self,data):
+        super().__init__()
+        save_array = None
+        if type(data) == dict:
+            
+            for key in data.keys():
+                if save_array is None:
+                    save_array  = np.array(data[key])
+                else:
+                    save_array = np.vstack((save_array,data[key]))
+                    
+           
+        else:
+            self.save_data = np.array(data)
+            
+        #hold data for saving
+        
+        self.save_data = save_array
+        
+        #Add Widgets to view
+        
+        self.EnterName = QtWidgets.QLineEdit('Enter File name')
+        self.save_btn = QtWidgets.QPushButton("Save")
+        
+        self.lyt = QtWidgets.QVBoxLayout()
+        self.lyt.addWidget(self.EnterName)
+        self.lyt.addWidget(self.save_btn)
+        
+        self.setLayout(self.lyt)
+        
+        
+        #connect save button to the function save
+        self.save_btn.clicked.connect(self.save)
+        self.EnterName.returnPressed.connect(self.save)
+        self.show()
+        
+    def save(self):
+        
+        np.savetxt(os.getcwd() + '/'+self.EnterName.text()+'.csv',self.save_data,delimiter = ',')
+        
+        #purge save_data
+        self.save_data = None
+        
+        self.close()
+        
+                
+        
 class myworker(QtCore.QObject):
     sig1 = pyqtSignal()
     sig2 = pyqtSignal()
