@@ -302,7 +302,27 @@ class Analyser(object):
         if len(centre) >0:
             
             print(self.active_labels)
-            av_intens = np.average(self.clips[self.active_labels == label][0][centre[0]-4:centre[0]+4,centre[1]-4:centre[1]+4])
+            print('Clip has shape: ', self.clips[self.active_labels == label][0].shape)
+
+            x1 = 4
+            y1 = 4
+            lx = 31
+            ly = 31
+            #check the box can fit into clip
+
+            centre = np.array(centre)
+            dims_min= np.array([x1,y1])
+            dims_max = np.array([lx-x1,ly-y1])
+
+            margins_from_edge = np.vstack(((centre-dims_min),(dims_max - centre)))
+            if np.any(margins_from_edge.flatten() < 0):
+                x1 += np.min(margins_from_edge)
+                y1 += np.min(margins_from_edge)
+            
+            
+            small_box_in_ves = self.clips[self.active_labels == label][0][centre[0]-y1:centre[0]+y1,centre[1]-x1:centre[1]+x1]
+            print(small_box_in_ves)
+            av_intens = np.average(small_box_in_ves)
             print(av_intens)
             try:
             
