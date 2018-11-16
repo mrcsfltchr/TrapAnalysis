@@ -77,7 +77,13 @@ class SingleVesViewer(QtWidgets.QWidget):
         self.gen_directional_heatmap_btn = QtWidgets.QPushButton('Check Exp Directionality')
         self.gen_directional_heatmap_btn.clicked.connect(self.check_ready_to_record_times)
         
-
+        #switch control for displaying thresholded or unprocessed image inside trap
+        #abstract switch
+        self.threshold_on = False
+        
+        #actual graphic switch
+        self.threshold_control = QtWidgets.QPushButton('Show Thresholded Image')
+        self.threshold_control.clicked.connect(self.show_thresholded_frame)
         
         #Layout
         
@@ -118,6 +124,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         self.lyt.addWidget(self.label_select_lbl,2,0)
         self.lyt.addWidget(self.label_select,3,0)
         self.lyt.addWidget(self.one_ves_view,0,1)
+        self.lyt.addWidget(self.threshold_control,1,1)
         self.lyt.addWidget(self.go,4,0)
         self.lyt.addWidget(self.reload_with_centres,2,1)
         self.lyt.addWidget(self.plotter_with_border,0,0)
@@ -126,6 +133,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         self.lyt.addWidget(self.save_heat,5,1)
         
         self.lyt.addWidget(self.delete,3,1)
+        
         self.setLayout(self.lyt)
     
         self.show()
@@ -189,15 +197,17 @@ class SingleVesViewer(QtWidgets.QWidget):
             self.xdata['Area'] = 0.5*np.arange(len(self.ydataA[lbl]))
             self.xdata['Intensity'] = 0.5*np.arange(len(self.ydataI[lbl]))
             
-            if self.compare_ydataA and self.compare_ydataI is not None:
+            if self.compare_ydataA is not None and self.compare_ydataI is not None:
                 self.compare_xdata['Area'] = 0.5*np.arange(len(self.compare_ydataA[lbl]))
                 self.compare_xdata['Intensity'] = 0.5*np.arange(len(self.compare_ydataI[lbl]))
                 self.compare_ydata['Area'] = self.compare_ydataA[lbl]
                 self.compare_ydata['Intensity'] = self.compare_ydataI[lbl]
+                self.plotter_with_border.plotter.plotIAforaves(self.xdata,self.ydata,self.params,compare_xdata = self.compare_xdata,compare_ydata = self.compare_ydata)
+            else:
+                self.warning_box.setText('Alternative Method Area and Intensity data not available')
+                self.warning_box.exec_()
             
-            
-            
-            self.plotter_with_border.plotter.plotIAforaves(self.xdata,self.ydata,self.params,compare_xdata = self.compare_xdata,compare_ydata = self.compare_ydata)
+                self.plotter_with_border.plotter.plotIAforaves(self.xdata,self.ydata,self.params) 
         
         
     
@@ -314,6 +324,17 @@ class SingleVesViewer(QtWidgets.QWidget):
 
         return np.vstack((coords[0].flatten(),coords[1].flatten()))
 
+    def show_thresholded_frame(self):
+        
+        if self.threshold_on == False:
+            self.threshold_on = True
+            self.one_ves_view.turn_on_threshold(self.threshold_on)
+            print(self.threshold_on)
+        else:
+            self.threshold_on = False
+            print(self.threshold_on)
+            self.one_ves_view.turn_on_threshold(self.threshold_on)
+            
 
             
 
