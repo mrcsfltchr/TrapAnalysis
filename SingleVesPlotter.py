@@ -119,7 +119,7 @@ class Plotter(QtWidgets.QWidget):
 
                                 
                                 
-    def plotIAforaves(self,xdata, ydata,params,compare_xdata = None,compare_ydata = None):
+    def plotIAforaves(self,xdata, ydata,params,compare_xdata = None,compare_ydata = None,compare_labels = None):
 
 
         
@@ -143,13 +143,15 @@ class Plotter(QtWidgets.QWidget):
                 self.axes[index].set_xticks(np.array([0,int(len(ydata[key])),len(ydata[key])])*30)
                 
                 
-                self.axes[index].plot(xdata[key],ydata[key],c = 'k',alpha = 0.7)
+                self.axes[index].plot(xdata[key],ydata[key],c = 'k',alpha = 0.7,label = params[key][2])
                 
                 
 
                 if self.compare_methods and compare_xdata is not None and compare_ydata is not None:
-                    self.axes[index].plot(compare_xdata[key],compare_ydata[key], c= 'r',alpha = 0.6)
-        
+                    self.axes[index].plot(compare_xdata[key],compare_ydata[key], c= 'r',alpha = 0.6,label = compare_labels[key])
+                    self.axes[index].legend()
+
+                    
                 self.axes[index].figure.canvas.draw()
             self.canvas.figure.tight_layout()
                 

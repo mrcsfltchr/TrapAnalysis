@@ -268,9 +268,9 @@ class Analyser(object):
         testclip[self.clips[self.active_labels == label].reshape(31,31) > threshold] = 1
         
         try:
-            self.areatrace[str(label)].append(len(testclip[testclip >0]))
+            self.secondareatrace[str(label)].append(len(testclip[testclip >0]))
         except KeyError:
-            self.areatrace[str(label)] = [len(testclip[testclip >0])]
+            self.secondareatrace[str(label)] = [len(testclip[testclip >0])]
             
         dt = distance_transform_edt(testclip)
             
@@ -283,10 +283,10 @@ class Analyser(object):
             img[rr,cc] = self.clips[self.active_labels == label][0][rr,cc]
         
             try:
-                self.secondareatrace[str(label)].append(len(np.nonzero(img)[0]))
+                self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
                 self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
-                self.secondareatrace[str(label)] = [len(np.nonzero(img)[0])]
+                self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
                 self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
 
 

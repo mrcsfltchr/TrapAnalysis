@@ -38,7 +38,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         self.compare_ydataI = None
         self.compare_ydataA = None
-        
+
         
         #Add dictionaries to be passed to the plot function
         
@@ -49,6 +49,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         self.compare_xdata = {}
         self.compare_ydata = {}
+        self.compare_labels = {}
         #Standard message box which prompts user to accept or reject and queued operation
         
         self.interact_display = StandardDialog()
@@ -191,8 +192,8 @@ class SingleVesViewer(QtWidgets.QWidget):
             self.ydata['Intensity'] = self.ydataI[lbl]
 
             
-            self.params['Area'] = ['Time since t0/s','Area within Vesicle/Pixels' ]
-            self.params['Intensity'] = ['Time since t0/s', 'Average Intensity within Vesicle/a.u.']
+            self.params['Area'] = ['Time since t0/s','Area within Vesicle/Pixels','Detecting Radius Method' ]
+            self.params['Intensity'] = ['Time since t0/s', 'Average Intensity within Vesicle/a.u.','Average only near centre']
 
             self.xdata['Area'] = 0.5*np.arange(len(self.ydataA[lbl]))
             self.xdata['Intensity'] = 0.5*np.arange(len(self.ydataI[lbl]))
@@ -202,7 +203,9 @@ class SingleVesViewer(QtWidgets.QWidget):
                 self.compare_xdata['Intensity'] = 0.5*np.arange(len(self.compare_ydataI[lbl]))
                 self.compare_ydata['Area'] = self.compare_ydataA[lbl]
                 self.compare_ydata['Intensity'] = self.compare_ydataI[lbl]
-                self.plotter_with_border.plotter.plotIAforaves(self.xdata,self.ydata,self.params,compare_xdata = self.compare_xdata,compare_ydata = self.compare_ydata)
+                self.compare_labels['Area'] = 'Thresholding Method'
+                self.compare_labels['Intensity'] = 'Detecting Radius Method'
+                self.plotter_with_border.plotter.plotIAforaves(self.xdata,self.ydata,self.params,compare_xdata = self.compare_xdata,compare_ydata = self.compare_ydata,compare_labels = self.compare_labels)
             else:
                 self.warning_box.setText('Alternative Method Area and Intensity data not available')
                 self.warning_box.exec_()
