@@ -32,11 +32,11 @@ The detection process relies on finding initial estimates for the particle posit
 
 4. Saving and Loading Features
 
-  The **Intensity** of the detected particle over the course of the video, as well as the **area** of the particle, the **detected box positions** , the **detected particle centre coordinates within the boxes** and the **indices of the first and last frames of the experiment** may be saved for further analysis or for reloading later. 
+    The **Intensity** of the detected particle over the course of the video, as well as the **area** of the particle, the **detected box positions** , the **detected particle centre coordinates within the boxes** and the **indices of the first and last frames of the experiment** may be saved for further analysis or for reloading later. 
 
-  The **Intensities and Areas** are stored as csv files which are compatible with Excel. The **centres** and **initial and final frame indices** are stored as text files, as it is not anticipated that these will be used outside this program.
+    The **Intensities and Areas** are stored as csv files which are compatible with Excel. The **centres** and **initial and final frame indices** are stored as text files, as it is not anticipated that these will be used outside this program.
 
-  It is also made possible to store data for a **heat plot** comparing the times taken for each particle to burst after exposure to the drug in the perfusion experiment this analysis was designed for.
+    It is also made possible to store data for a **heat plot** comparing the times taken for each particle to burst after exposure to the drug in the perfusion experiment this analysis was designed for.
 
 
 
