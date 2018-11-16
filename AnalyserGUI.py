@@ -97,6 +97,10 @@ class AnalyserPanel(QWidget):
         self.display = VideoBorder()
         self.vid_control =VideoViewerControl()
         
+        #Add a button to switch to pop up videoviewer
+        
+        self.switch_to_popup = QtWidgets.QPushButton('Switch to Popup')
+        self.switch_to_popup.clicked.connect(self.load_pop_up)
         
         #bring up single vesicle viewer window button
         
@@ -134,9 +138,10 @@ class AnalyserPanel(QWidget):
         self.layout = QGridLayout()
 
         self.layout.addWidget(self.display,0,3)
+        self.layout.addWidget(self.switch_to_popup,1,4)
         self.layout.addWidget(self.loadbox,2,0)
         self.layout.addWidget(self.tc,2,1)
-        self.layout.addWidget(self.vid_control,1,4)
+        self.layout.addWidget(self.vid_control,2,4)
         self.layout.addWidget(self.svvbtn,0,0)
         self.layout.addWidget(self.AControl,1,1)
         self.layout.addWidget(self.save_data_btn,1,2)
@@ -251,12 +256,14 @@ class AnalyserPanel(QWidget):
             self.display.videoviewer.tv.videobox.update_annotations(self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels)
             
             print(self.display.videoviewer.tv.videobox.trap_positions)
+            
         
         elif self.trap_bool:
             self.trap_bool = False
             self.vid_control.withtraps_switch.setText('Traps On')
             self.display.videoviewer.annotations_switch = False
-    
+            
+            self.display.videoviewer.tv.videobox.update_annotations(None,None)
             
     def loadpressed(self):
         
@@ -453,7 +460,12 @@ class AnalyserPanel(QWidget):
     
     def load_display(self):
         self.display.videoviewer.create_video_display(self.analyser.frames)
+
+    def load_pop_up(self):
+        exitval = self.display.videoviewer.create_popup_video(frames = self.analyser.frames)
         
+        if exitval == -1:
+            self.display.videoviewer.create_video_display(self.analyser.frames)
     def getfile(self):
         
             
@@ -633,7 +645,9 @@ class VideoViewingBox(QWidget):
         self.layout.addWidget(self.DefaultLabel)
 
         self.setLayout(self.layout)
-        
+
+        #add flag for whether popup exists
+        self.popupflag = False
         #warningbox
         
         self.warningbox = QtWidgets.QMessageBox()
@@ -677,6 +691,32 @@ class VideoViewingBox(QWidget):
 
             self.layout.addWidget(self.tv)
 
+
+    def create_popup_video(self,frames = None):
+
+        #if have already created the embedded videoviewer, delete it        
+        if self.tv is not None:
+            self.tv = None
+            self.clearLayout(self.layout)
+
+        #if this no popupwindow exists, calling this function creates it so update existence flag to true
+            
+        if not self.popupflag:
+            self.popupflag = True
+
+ 
+            
+            #create new video viewer and call show to display widget in its own window
+        
+            self.tv = TrapViewer(qnd,frames,self.traps,self.labels)
+            self.tv.show()
+
+        #if popupflag is true a popup window should have existed, so update this to false now it has been deleted and call the function to create embedded video display
+            
+        else:
+            self.popupflag = False
+            return -1
+            
     def clearLayout(self,layout):
         while layout.count():
             child = layout.takeAt(0)

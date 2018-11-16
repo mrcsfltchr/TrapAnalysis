@@ -17,12 +17,15 @@ from qtpy.QtCore import QTimer
 import numpy as np
 import sys
 import os
+from skimage.filters import threshold_otsu
 
 class  livestream(QWidget):
     i = 0
-    def __init__(self,qnd,images = None,annotations_on = True,annotate_coords = None):
+    def __init__(self,qnd,images = None,annotations_on = True,annotate_coords = None,threshold_switch = False):
         QWidget.__init__(self)
         
+        
+        self.threshold_switch = threshold_switch
         self.video = images
         self.videobox = Label()
         if annotations_on and annotate_coords is not None:
@@ -114,8 +117,7 @@ class  livestream(QWidget):
         self.videobox.activeframe = self.video[0]
         if self.coords is not None:
             self.videobox.activecoord = self.coords[0]
-        print('Hi from the function assign_images')
-        
+
         #readjust slider and ticker values to dimensions of video
         
         self.sl.setMaximum(len(self.video)-1)
@@ -137,9 +139,17 @@ class  livestream(QWidget):
         
     def update_display(self):
         
-
-        
-        self.videobox.activeframe = self.video[livestream.i]
+        if self.threshold_switch:
+            threshold = threshold_otsu(self.video[livestream.i])
+            
+            mask = np.zeros_like(self.video[livestream.i])
+            mask[self.video[livestream.i] > threshold] = 1
+            self.videobox.maxintens = 1
+            self.videobox.activeframe = mask
+        else:
+            #if threshold switch is off display usual video, so change active frame source and reset maximum intensity for passing to qimage2ndarray
+            self.videobox.activeframe = self.video[livestream.i]
+            self.videobox.maxintens = np.max(self.video)
         try:
             self.videobox.activecoord = self.coords[livestream.i]
 
@@ -179,6 +189,10 @@ class  livestream(QWidget):
     def video_time_update(self):
         self.video_time.setValue(30*self.frame_counter.value())
         
+        
+    def turn_on_threshold(self,threshold_switch):
+        self.threshold_switch = threshold_switch
+        self.update_display()
         
 
 class Label(QtWidgets.QLabel):
