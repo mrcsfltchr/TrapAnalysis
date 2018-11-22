@@ -201,9 +201,13 @@ class Analyser(object):
             
             tic = time.time()
 
-                        
-                        
+                                    
+                                 
             self.clips = frame.flatten().T*self.activemask
+
+            print(self.clips.shape[0])
+            if self.clips.shape[0] ==0:
+                break
             
             self.clips = self.clips[self.clips >0].reshape(self.clips.shape[0],31,31)
             
