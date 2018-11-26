@@ -162,7 +162,7 @@ class AnalyserPanel(QWidget):
         self.layout.addWidget(self.AControl,1,1)
         self.layout.addWidget(self.save_data_btn,1,2)
         self.layout.addWidget(self.load_history,1,3)
-        self.layout
+        self.layout.addWidget(self.purge_btn,3,0)
         self.msgbox = MsgBox()
         self.msgbox.setText('')
         
