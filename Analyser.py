@@ -480,7 +480,7 @@ class Analyser(object):
 
         
 if __name__ == '__main__':
-    
+    '''
     A = Analyser('/Users/MarcusF/Desktop/TrapAnalysis/260522_CecB-  PCPG vesicles- after flushing_1_MMStack_Pos6.ome.tif')
     A.load_frames()
     A.get_traps()
@@ -494,9 +494,10 @@ if __name__ == '__main__':
     A.visualise_box_contents(11)
     app = QtWidgets.QApplication(sys.argv)
     A.viewstream(11,965,A.vesiclelife)
-    '''
+    
     A.heat_data_generator()
     A.get_heat_plot()
-    '''
+    
     A.plotnow(11)
     app.exec_()
+    '''
