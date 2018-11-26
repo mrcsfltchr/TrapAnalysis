@@ -110,6 +110,7 @@ class AnalysisLauncher(QtWidgets.QWidget):
 
 
         else:
+            print('multidonesig sent')
             self.multidonesig.emit()
             
             

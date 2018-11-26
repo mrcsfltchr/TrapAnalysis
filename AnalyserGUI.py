@@ -177,7 +177,7 @@ class AnalyserPanel(QWidget):
         self.sv = None
         self.display = VideoBorder()
         self.vid_control = VideoViewerControl()
-
+        self.loadbox.videopathlist = None
         self.layout.addWidget(self.display,0,3)
         self.layout.addWidget(self.vid_control,2,4)
 
@@ -368,14 +368,7 @@ class AnalyserPanel(QWidget):
     
     
     
-    def update_path_list(self):
-        #check that a video path list has been supplied.
-    
-        if self.loadbox.videopathlist is not None:
-            self.analyser.videopaths = self.loadbox.videopathlist
-        else:
-            self.msgbox.setText('No valid file paths selected')
-            self.msgbox.exec_()
+
        
     def update_path(self):
         
@@ -404,7 +397,8 @@ class AnalyserPanel(QWidget):
 
         
     def pre_flight_check(self):
-    
+
+        print('Value of multi flag is ', self.AControl.multi_pressed_flag)
         #after we have checked in the AControl that t0 and tmax have been assigned, we also check here that the length of the video to be analysed is valid. I have presumed that a video of less than 100 frames is probably a mistake. So i warn Kareem. However, I give the user the opportunity to run analysis anyway.
         #If the length of the video is longer than this we proceed directly with the analysis.
         length = int(self.AControl.tmaxselector.currentText()) - int(self.AControl.t0selector.currentText())
@@ -421,7 +415,8 @@ class AnalyserPanel(QWidget):
         elif not self.AControl.multi_pressed_flag:
             self.run_analysis()
             
-        else: 
+        else:
+            print('multi run analysis function about to run')
             self.multi_run_analysis()
             
             
@@ -430,15 +425,18 @@ class AnalyserPanel(QWidget):
         
         print(ret, "hi")
         if ret == QMessageBox.Ok:
-            self.run_analysis()
-        
+            if not self.AControl.multi_pressed_flag:
+                self.run_analysis()
+            else:
+                self.multi_run_analysis()
+                
     def multi_run_analysis(self):
         label_offset = 0
-        for key in self.analyser.videopaths.keys():
+        for key in self.loadbox.videopathlist.keys():
             #first load the new video
-            self.analyser.videopath = self.analyser.videopaths[key]
+            self.analyser.videopath = self.loadbox.videopathlist[key]
             
-            self.analyser.multivid_frames[key]= self.analyser.load_frames()
+            self.analyser.multivid_frames[key]= self.analyser.load_frames(self.AControl.t0,self.AControl.tmax)
             
             self.analyser.traps_by_vid[key], self.analyser.labels_by_vid[key] = self.analyser.get_traps()
             
@@ -463,7 +461,7 @@ class AnalyserPanel(QWidget):
                 self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()))
                 self.analyser.subtract_background()          
 
-
+            
         #Plan is to stick videos together as they would be in the traps. Then must readjust the trap centre coordiates by the corresponding offset vector of the origin for each video.
         #This must also be done for the particle centre coordinates.
             
@@ -500,10 +498,15 @@ class AnalyserPanel(QWidget):
             
                 self.sv = None
 
-
+            #create a dictionary which matches the video to the labelled position of this video in the chamber. This is done so that the single video case may be handled in the same way as the multivideo case.
+                
+            frames_dict = {}
+            frames_dict['1'] = self.analyser.frames
             
             if self.mode == 'directional':
-                self.sv = SingleVesViewer(self.analyser.frames,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions,mode = 'directional')
+
+                
+                self.sv = SingleVesViewer(frames_dict,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions,mode = 'directional')
             else:
                 self.sv = SingleVesViewer(self.analyser.frames,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions)
             self.sv.centres = self.analyser.centres
@@ -749,7 +752,7 @@ class LoadBox(QtWidgets.QWidget):
         
         self.videopathlist = {}
         for i in range(1,5):
-            self.videopathlist[str(i)] = []
+            self.videopathlist[str(i)] = None
             
         self.num_of_videos = 0
         
@@ -759,7 +762,7 @@ class LoadBox(QtWidgets.QWidget):
             self.num_of_videos += 1
             if self.num_of_videos <=4:
                 
-                self.videopathlist[str(self.num_of_videos)].append(self.pathshower.text())
+                self.videopathlist[str(self.num_of_videos)] = self.pathshower.text()
 
             else:
                 self.loaderror.emit()

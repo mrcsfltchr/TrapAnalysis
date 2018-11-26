@@ -22,7 +22,7 @@ class Analyser(object):
         
         #add deposit for a list of paths,trap coordinates for each video and their corresponding labels. 
         self.videopaths =None
-        self.trap_by_vid = {}
+        self.traps_by_vid = {}
         self.labels_by_vid = {}
         self.multivid_frames = {}
         
@@ -52,7 +52,7 @@ class Analyser(object):
         self.visibletrapframe = None
 
         self.classifier = load_model('VesClassifier')
-        self.mask = np.array([])
+        self.mask = None
         self.t0frameNo = 0
         
         self.vesiclelife = None
@@ -66,10 +66,13 @@ class Analyser(object):
         self.heat_data = np.array([])
         self.HPG = HeatPlotGenerator()
         
-    def load_frames(self):
+    def load_frames(self,t0 = None,tmax = None):
 
         with tf.TiffFile(self.videopath) as tif:
-            frames = tif.asarray()
+            if t0 is not None:
+                frames = tif.asarray(key = slice(t0,tmax))
+            else:
+                frames = tif.asarray()
         print('Done!')
 
         return frames
@@ -131,7 +134,7 @@ class Analyser(object):
         print("list of trap coords has shape, ",self.trapgetter.trap_positions.shape[0])
         #initialize label variable as the label of the first trap.
 
-        
+        self.mask = None
         for trap in self.trapgetter.trap_positions:
             
             
@@ -152,7 +155,7 @@ class Analyser(object):
                 self.trapgetter.trap_positions = self.trapgetter.trap_positions[distances > 1e-8,:]
 
                 continue
-            if self.mask.shape[0] > 0:
+            if self.mask is not None:
                 self.mask = np.vstack((self.mask,clip.flatten()))
 
             else:
