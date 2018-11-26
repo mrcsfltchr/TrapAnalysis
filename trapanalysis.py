@@ -59,7 +59,7 @@ class TrapGetter(object):
     
         self.trap_positions = np.array(peaks)
    
-        print('successfully found vesicles')
+        
     
     def get_trap_positions(self,frame):
         self.frame = frame
@@ -105,6 +105,9 @@ class TrapGetter(object):
         print("non duplicated labels length " ,self.labels.shape[0])
 
 
+        return self.trap_positions,self.labels
+    
+    
     def get_boxes(self):
         if self.frame:
             canvas = np.zeros_like(images[0])

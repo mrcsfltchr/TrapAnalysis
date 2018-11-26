@@ -19,9 +19,15 @@ import sys
 class Analyser(object):
 
     def __init__(self,path):
-        self.videopath =path
-        self.frames = None
         
+        #add deposit for a list of paths,trap coordinates for each video and their corresponding labels. 
+        self.videopaths =None
+        self.trap_by_vid = {}
+        self.labels_by_vid = {}
+        self.multivid_frames = {}
+        
+        self.videopath = path
+        self.frames = None       
 
 
         #data repositories
@@ -63,10 +69,12 @@ class Analyser(object):
     def load_frames(self):
 
         with tf.TiffFile(self.videopath) as tif:
-            self.frames = tif.asarray()
+            frames = tif.asarray()
         print('Done!')
-        
-        
+
+        return frames
+
+
         
         
     def get_traps(self):
@@ -79,8 +87,9 @@ class Analyser(object):
         '''
         self.vframe = self.frames[400]
         self.trapgetter.get_vesicle_positions(self.vframe)
-        self.trapgetter.remove_duplicates() 
+        traps,labels = self.trapgetter.remove_duplicates() 
 
+        return traps,labels
     def rectangle(self,start, end=None, extent=None, shape=None):
     
         if extent is not None:
@@ -201,9 +210,13 @@ class Analyser(object):
             
             tic = time.time()
 
-                        
-                        
+                                    
+                                 
             self.clips = frame.flatten().T*self.activemask
+
+            print(self.clips.shape[0])
+            if self.clips.shape[0] ==0:
+                break
             
             self.clips = self.clips[self.clips >0].reshape(self.clips.shape[0],31,31)
             
@@ -268,9 +281,9 @@ class Analyser(object):
         testclip[self.clips[self.active_labels == label].reshape(31,31) > threshold] = 1
         
         try:
-            self.areatrace[str(label)].append(len(testclip[testclip >0]))
+            self.secondareatrace[str(label)].append(len(testclip[testclip >0]))
         except KeyError:
-            self.areatrace[str(label)] = [len(testclip[testclip >0])]
+            self.secondareatrace[str(label)] = [len(testclip[testclip >0])]
             
         dt = distance_transform_edt(testclip)
             
@@ -283,10 +296,10 @@ class Analyser(object):
             img[rr,cc] = self.clips[self.active_labels == label][0][rr,cc]
         
             try:
-                self.secondareatrace[str(label)].append(len(np.nonzero(img)[0]))
+                self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
                 self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
-                self.secondareatrace[str(label)] = [len(np.nonzero(img)[0])]
+                self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
                 self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
 
 
@@ -472,7 +485,8 @@ class Analyser(object):
     def get_heat_plot(self):
         
         self.HPG.generate(self.times,self.heat_data_ordered,'Plot of the fluorescent intensities of trapped vesicles\n against time after being subject to the drug',self.heat_data_ordered.shape[0])
-        
+
+
         
 if __name__ == '__main__':
     
