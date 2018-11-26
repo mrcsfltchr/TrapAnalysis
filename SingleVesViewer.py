@@ -11,6 +11,8 @@ class SingleVesViewer(QtWidgets.QWidget):
     def __init__(self,frames,traps = None,labels= None,box_dimensions = None,mode = 'standard'):
 
         QtWidgets.QWidget.__init__(self)
+
+        #store frames as a dictionary
         self.frames = frames
         self.trap_positions = traps
         self.labels = labels
@@ -279,13 +281,13 @@ class SingleVesViewer(QtWidgets.QWidget):
             self.label_select.addItems((self.labels.astype(str).tolist()))
 
     
-    def visualise_box_contents(self,label):
+    def visualise_box_contents(self,label,key='1'):
         print(label)
         trap = self.trap_positions[self.labels == label][0]
         
         print('This is the trap',trap)
         
-        clip = np.zeros_like(self.frames[0])
+        clip = np.zeros_like(self.frames[key][0])
         
         try:
             #here we create a binary mask of shape 512*512 (frame size of video) such that only pixels within the labelled trap have value 1 and the rest 0
@@ -301,11 +303,11 @@ class SingleVesViewer(QtWidgets.QWidget):
         #Here exploit numpy array broadcasting. First flatten each frame in the full video into a vector so that we get a 2d array of shape, No.of frames of video requested by user  X (512*512). Then we multiply each of these vectors by the binary mask calculated just before to extract the pixels within the requested trap. Then finally we remove the non zero pixels and reshape.
         
         
-        self.vesiclelife = self.frames.reshape(self.frames.shape[0],self.frames.shape[1]*self.frames.shape[2])*clip.flatten()
+        self.vesiclelife = self.frames[key].reshape(self.frames[key].shape[0],self.frames[key].shape[1]*self.frames[key].shape[2])*clip.flatten()
         
         self.vesiclelife = self.vesiclelife[self.vesiclelife !=0]
         
-        self.vesiclelife = self.vesiclelife.reshape(self.frames.shape[0],31,31)
+        self.vesiclelife = self.vesiclelife.reshape(self.frames[key].shape[0],31,31)
 
 
     def rectangle(self,start, end=None, extent=None, shape=None):

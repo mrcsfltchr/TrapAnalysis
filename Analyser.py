@@ -19,9 +19,15 @@ import sys
 class Analyser(object):
 
     def __init__(self,path):
-        self.videopath =path
-        self.frames = None
         
+        #add deposit for a list of paths,trap coordinates for each video and their corresponding labels. 
+        self.videopaths =None
+        self.traps_by_vid = {}
+        self.labels_by_vid = {}
+        self.multivid_frames = {}
+        
+        self.videopath = path
+        self.frames = None       
 
 
         #data repositories
@@ -46,7 +52,7 @@ class Analyser(object):
         self.visibletrapframe = None
 
         self.classifier = load_model('VesClassifier')
-        self.mask = np.array([])
+        self.mask = None
         self.t0frameNo = 0
         
         self.vesiclelife = None
@@ -60,13 +66,18 @@ class Analyser(object):
         self.heat_data = np.array([])
         self.HPG = HeatPlotGenerator()
         
-    def load_frames(self):
+    def load_frames(self,t0 = None,tmax = None):
 
         with tf.TiffFile(self.videopath) as tif:
-            self.frames = tif.asarray()
+            if t0 is not None:
+                frames = tif.asarray(key = slice(t0,tmax))
+            else:
+                frames = tif.asarray()
         print('Done!')
-        
-        
+
+        return frames
+
+
         
         
     def get_traps(self):
@@ -79,8 +90,9 @@ class Analyser(object):
         '''
         self.vframe = self.frames[400]
         self.trapgetter.get_vesicle_positions(self.vframe)
-        self.trapgetter.remove_duplicates() 
+        traps,labels = self.trapgetter.remove_duplicates() 
 
+        return traps,labels
     def rectangle(self,start, end=None, extent=None, shape=None):
     
         if extent is not None:
@@ -122,7 +134,7 @@ class Analyser(object):
         print("list of trap coords has shape, ",self.trapgetter.trap_positions.shape[0])
         #initialize label variable as the label of the first trap.
 
-        
+        self.mask = None
         for trap in self.trapgetter.trap_positions:
             
             
@@ -143,7 +155,7 @@ class Analyser(object):
                 self.trapgetter.trap_positions = self.trapgetter.trap_positions[distances > 1e-8,:]
 
                 continue
-            if self.mask.shape[0] > 0:
+            if self.mask is not None:
                 self.mask = np.vstack((self.mask,clip.flatten()))
 
             else:

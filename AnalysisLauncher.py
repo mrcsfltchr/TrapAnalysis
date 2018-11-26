@@ -9,7 +9,7 @@ class AnalysisLauncher(QtWidgets.QWidget):
     
     
     donesig = pyqtSignal()
-
+    multidonesig = pyqtSignal()
     
     def __init__(self,frames = None):
         QtWidgets.QWidget.__init__(self)
@@ -33,9 +33,17 @@ class AnalysisLauncher(QtWidgets.QWidget):
         self.t0selector.currentTextChanged.connect(self.update_exp_frames)
         
         
-        
+        #create button to trigger analysis
         self.go_btn = QtWidgets.QPushButton('Run Analysis')
         self.go_btn.clicked.connect(self.pre_analysis_check)
+        
+        
+        #create alternative button for multivideo analysis
+        self.go_btn_list = QtWidgets.QPushButton('Run Analysis: MultiVideo')
+        self.go_btn_list.clicked.connect(self.pre_multi_check)
+        
+
+        self.multi_pressed_flag = False
         
         self.layout = QtWidgets.QGridLayout()
         
@@ -45,6 +53,7 @@ class AnalysisLauncher(QtWidgets.QWidget):
         self.layout.addWidget(self.tmaxlbl,0,1)
         self.layout.addWidget(self.tmaxselector,1,1)
         self.layout.addWidget(self.go_btn,2,0)
+        self.layout.addWidget(self.go_btn_list,2,1)
         
         
         self.setLayout(self.layout)
@@ -90,13 +99,23 @@ class AnalysisLauncher(QtWidgets.QWidget):
     def pre_analysis_check(self):
 
 
-        if self.t0 is None or self.tmax is None:
 
+        if self.t0 is None or self.tmax is None:
             self.msgbox.setText('You have not selected valid starting and ending frames for the\n experimental analysis')
 
             self.msgbox.show()
 
-        else:
+        elif not self.multi_pressed_flag:
             self.donesig.emit()
 
 
+        else:
+            print('multidonesig sent')
+            self.multidonesig.emit()
+            
+            
+    def pre_multi_check(self):
+
+        self.multi_pressed_flag = True
+        
+        self.pre_analysis_check()

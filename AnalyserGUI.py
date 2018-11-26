@@ -29,6 +29,9 @@ from savebox import SaveBox,LoadBox as lb
 
 from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
+
+
+
 class MW(QtWidgets.QMainWindow):
     
     
@@ -64,7 +67,10 @@ class AnalyserPanel(QWidget):
     def __init__(self,mode = 'standard'):
         QWidget.__init__(self)
         
-        
+        #add reset button
+        self.purge_btn = QtWidgets.QPushButton('Reset')
+        self.purge_btn.clicked.connect(self.purge)
+
         #store mode. This determines whether extra features are incorporated to GUI.
         
         self.mode = mode
@@ -80,15 +86,21 @@ class AnalyserPanel(QWidget):
         
         
         #Add Load historical data button, mainly for help with debugging, but also for convenience if wanting to look at data again, without having to rerun
+
         
         self.load_history = QPushButton('Load Analysis from File')
         
         self.load_history.clicked.connect(self.show_load)
         
+
         
         
         self.loadbox.choosevideo.clicked.connect(self.getfile)
         self.loadbox.pathshower.textChanged.connect(self.update_path)
+        
+        #add signal from loadbox "add path to list error" to the main GUI msgbox to display error message to user
+        self.loadbox.loaderror.connect(self.video_path_collection_error)
+        
         
         #analyser which contains, video loader backend, and analyser, but not TrapGetting function
         self.analyser = Analyser('')
@@ -122,6 +134,7 @@ class AnalyserPanel(QWidget):
         
         self.AControl = AnalysisLauncher()
         self.AControl.donesig.connect(self.pre_flight_check)
+        self.AControl.multidonesig.connect(self.pre_flight_check)
         
         #Add reload t0 and tmax values to override the combobox selection control
         
@@ -133,7 +146,6 @@ class AnalyserPanel(QWidget):
         self.combo_switch_off = True
 
 
-        
         #flags
         self.trap_bool = False
         self.has_frames = False
@@ -150,7 +162,7 @@ class AnalyserPanel(QWidget):
         self.layout.addWidget(self.AControl,1,1)
         self.layout.addWidget(self.save_data_btn,1,2)
         self.layout.addWidget(self.load_history,1,3)
-
+        self.layout
         self.msgbox = MsgBox()
         self.msgbox.setText('')
         
@@ -158,8 +170,29 @@ class AnalyserPanel(QWidget):
         self.setLayout(self.layout)
         
         ''' self.show() '''
+
+    def purge(self):
+
+        #reset analyser which contains the data. Reset thread as might contain data\
+        self.analyser = Analyser('')
+        self.mythread = QThread()
+        self.sv = None
+        self.display = VideoBorder()
+        self.vid_control = VideoViewerControl()
+        self.loadbox.videopathlist = None
+        self.layout.addWidget(self.display,0,3)
+        self.layout.addWidget(self.vid_control,2,4)
+
     
+    def video_path_collection_error(self):
         
+        self.msgbox.setText('Cannot add any more file paths than 4 at the moment.')
+        self.msgbox.exec_()
+        
+    
+
+
+
     def show_load(self):
         self.loader = lb(self)
         self.loader.show()
@@ -336,9 +369,13 @@ class AnalyserPanel(QWidget):
             self.msgbox.exec_()
     
     
-    def update_path(self):
     
+
+       
+    def update_path(self):
+        
         self.analyser.videopath = self.loadbox.pathshower.text()
+        
     
     def monitorprocess(self):
     
@@ -359,8 +396,11 @@ class AnalyserPanel(QWidget):
         # connect trap buttons to the analyser
         self.AControl.update_frames(self.analyser.frames)
     
+
+        
     def pre_flight_check(self):
-    
+
+        print('Value of multi flag is ', self.AControl.multi_pressed_flag)
         #after we have checked in the AControl that t0 and tmax have been assigned, we also check here that the length of the video to be analysed is valid. I have presumed that a video of less than 100 frames is probably a mistake. So i warn Kareem. However, I give the user the opportunity to run analysis anyway.
         #If the length of the video is longer than this we proceed directly with the analysis.
         length = int(self.AControl.tmaxselector.currentText()) - int(self.AControl.t0selector.currentText())
@@ -374,14 +414,60 @@ class AnalyserPanel(QWidget):
         
             self.proceed_yes_or_no(ret)
         
-        else:
+        elif not self.AControl.multi_pressed_flag:
             self.run_analysis()
+            
+        else:
+            print('multi run analysis function about to run')
+            self.multi_run_analysis()
+            
+            
+            
     def proceed_yes_or_no(self,ret):
         
         print(ret, "hi")
         if ret == QMessageBox.Ok:
-            self.run_analysis()
-        
+            if not self.AControl.multi_pressed_flag:
+                self.run_analysis()
+            else:
+                self.multi_run_analysis()
+                
+    def multi_run_analysis(self):
+        label_offset = 0
+        for key in self.loadbox.videopathlist.keys():
+            #first load the new video
+            self.analyser.videopath = self.loadbox.videopathlist[key]
+            
+            self.analyser.multivid_frames[key]= self.analyser.load_frames(self.AControl.t0,self.AControl.tmax)
+            
+            self.analyser.traps_by_vid[key], self.analyser.labels_by_vid[key] = self.analyser.get_traps()
+            
+            self.analyser.labels_by_vid[key] += label_offset
+            
+            #increase the offset for the next labels to be the largest label of the current set
+            label_offset = self.analyser.labels_by_vid[key][-1]
+            
+            #now make these traps and labels the trap positions and labels which are passed to the main analysis functions 
+            
+            self.analyser.trapgetter.trap_positions = self.analyser.traps_by_vid[key]
+            self.analyser.trapgetter.labels = self.analyser.labels_by_vid[key]
+  
+            #now the trap_positions and labels have been set, perform the analysis. As the intensity traces and areas are dictionaries with the labels as keys, and they are class attributes, they should 
+            if self.analyser.trapgetter.trap_positions is not None:
+                self.analyser.sett0frame(int(self.AControl.t0selector.currentText()))
+                
+    
+                self.analyser.get_clips_alt()
+                self.analyser.classify_clips()
+                self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()))
+                self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()))
+                self.analyser.subtract_background()          
+
+            
+        #Plan is to stick videos together as they would be in the traps. Then must readjust the trap centre coordiates by the corresponding offset vector of the origin for each video.
+        #This must also be done for the particle centre coordinates.
+            
+                
     def run_analysis(self):
     
         # run analysis
@@ -414,10 +500,15 @@ class AnalyserPanel(QWidget):
             
                 self.sv = None
 
-
+            #create a dictionary which matches the video to the labelled position of this video in the chamber. This is done so that the single video case may be handled in the same way as the multivideo case.
+                
+            frames_dict = {}
+            frames_dict['1'] = self.analyser.frames
             
             if self.mode == 'directional':
-                self.sv = SingleVesViewer(self.analyser.frames,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions,mode = 'directional')
+
+                
+                self.sv = SingleVesViewer(frames_dict,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions,mode = 'directional')
             else:
                 self.sv = SingleVesViewer(self.analyser.frames,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions)
             self.sv.centres = self.analyser.centres
@@ -608,31 +699,78 @@ class QAnalyser(QtCore.QObject):
 
     def run(self):
         
-        self.analyser.load_frames()
+        self.analyser.frames = self.analyser.load_frames()
         self.sig1.emit()
 
 
+
 class LoadBox(QtWidgets.QWidget):
+    
+    loaderror = pyqtSignal()
+    
     def __init__(self):
         QWidget.__init__(self)
         self.choosevideo = QPushButton('Choose Video')
         self.pathshower = QLineEdit('Select a Video')
-            
-        self.load_video = QPushButton('Load')
+        
+        self.videopathlist = None
 
+        self.load_video = QPushButton('Load')
+        
+        #Add Button to create video queue
+
+        self.create_queue_btn= QPushButton('Create Video Queue')
+        self.create_queue_btn.clicked.connect(self.create_queue)
+        
+        #Add button to append path to list
+        self.add_path_btn = QPushButton('+')
+        self.add_path_btn.clicked.connect(self.add_path)
+        
+        self.sublayout = QtWidgets.QHBoxLayout()
+
+        #create a subqidget for the layout
+        widg = QtWidgets.QWidget()
+        
+        self.sublayout.addWidget(self.create_queue_btn)
+        self.sublayout.addWidget(self.add_path_btn)
+        self.sublayout.addWidget(self.load_video)
+
+        widg.setLayout(self.sublayout)
+        
         self.lyt = QtWidgets.QVBoxLayout()
 
         self.lyt.addWidget(self.pathshower)
         self.lyt.addWidget(self.choosevideo)
-        self.lyt.addWidget(self.load_video)
+        self.lyt.addWidget(widg)
+        
 
         self.setLayout(self.lyt)
 
 
 
 
+    def create_queue(self):
+        #initialise dictionary to store paths of videos in
+        
+        self.videopathlist = {}
+        for i in range(1,5):
+            self.videopathlist[str(i)] = None
+            
+        self.num_of_videos = 0
+        
+    def add_path(self):
+        if self.videopathlist is not None:
+            #check number of paths user has attempted to add is less or equal to 4. if not send signal to owner of this class (main GUI) to raise message to user
+            self.num_of_videos += 1
+            if self.num_of_videos <=4:
+                
+                self.videopathlist[str(self.num_of_videos)] = self.pathshower.text()
 
-
+            else:
+                self.loaderror.emit()
+        else:
+            self.loaderror.emit()
+            
 class VideoBorder(QtWidgets.QFrame):
 
     def __init__(self):
