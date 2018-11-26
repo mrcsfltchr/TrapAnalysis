@@ -132,9 +132,7 @@ class AnalyserPanel(QWidget):
         
         self.combo_switch_off = True
 
-        #add reset button
-        self.purge_btn = QtWidgets.QPushButton('Reset')
-        self.purge_btn.clicked.connect(self.purge)
+
         
         #flags
         self.trap_bool = False
@@ -152,7 +150,7 @@ class AnalyserPanel(QWidget):
         self.layout.addWidget(self.AControl,1,1)
         self.layout.addWidget(self.save_data_btn,1,2)
         self.layout.addWidget(self.load_history,1,3)
-        self.layout.addWidget(self.purge_btn,3,0)
+
         self.msgbox = MsgBox()
         self.msgbox.setText('')
         
@@ -161,18 +159,6 @@ class AnalyserPanel(QWidget):
         
         ''' self.show() '''
     
-    def purge(self):
-
-        #reset analyser which contains the data. Reset thread as might contain data
-        self.analyser = Analyser('')
-        self.mythread = QThread()
-        self.sv = None
-        self.display = VideoBorder()
-        self.vid_control = VideoViewerControl()
-
-        self.layout.addWidget(self.display,0,3)
-        self.layout.addWidget(self.vid_control,2,4)
-
         
     def show_load(self):
         self.loader = lb(self)
