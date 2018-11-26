@@ -5,7 +5,7 @@ import qimage2ndarray as qnd
 import numpy as np
 from PyQt5.QtCore import pyqtSignal
 from SingleVesPlotter import Plotter
-
+import os
 
 class SingleVesViewer(QtWidgets.QWidget):
     def __init__(self,frames,traps = None,labels= None,box_dimensions = None,mode = 'standard'):
@@ -38,7 +38,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         self.compare_ydataI = None
         self.compare_ydataA = None
-        
+
         
         #Add dictionaries to be passed to the plot function
         
@@ -49,6 +49,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         self.compare_xdata = {}
         self.compare_ydata = {}
+        self.compare_labels = {}
         #Standard message box which prompts user to accept or reject and queued operation
         
         self.interact_display = StandardDialog()
@@ -116,6 +117,10 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         self.reload_with_centres.clicked.connect(self.include_centres)
         
+        #include button for saving heat data
+        
+        self.save_heat = QtWidgets.QPushButton('Save Heat Plot Data')
+        
         
         self.lyt.addWidget(self.label_select_lbl,2,0)
         self.lyt.addWidget(self.label_select,3,0)
@@ -126,6 +131,8 @@ class SingleVesViewer(QtWidgets.QWidget):
         self.lyt.addWidget(self.plotter_with_border,0,0)
         self.lyt.addWidget(self.plot_label_btn,1,0)
         self.lyt.addWidget(self.make_heat,4,1)
+        self.lyt.addWidget(self.save_heat,5,1)
+        
         self.lyt.addWidget(self.delete,3,1)
         
         self.setLayout(self.lyt)
@@ -185,8 +192,8 @@ class SingleVesViewer(QtWidgets.QWidget):
             self.ydata['Intensity'] = self.ydataI[lbl]
 
             
-            self.params['Area'] = ['Time since t0/s','Area within Vesicle/Pixels' ]
-            self.params['Intensity'] = ['Time since t0/s', 'Average Intensity within Vesicle/a.u.']
+            self.params['Area'] = ['Time since t0/s','Area within Vesicle/Pixels','Detecting Radius Method' ]
+            self.params['Intensity'] = ['Time since t0/s', 'Average Intensity within Vesicle/a.u.','Average only near centre']
 
             self.xdata['Area'] = 0.5*np.arange(len(self.ydataA[lbl]))
             self.xdata['Intensity'] = 0.5*np.arange(len(self.ydataI[lbl]))
@@ -196,7 +203,9 @@ class SingleVesViewer(QtWidgets.QWidget):
                 self.compare_xdata['Intensity'] = 0.5*np.arange(len(self.compare_ydataI[lbl]))
                 self.compare_ydata['Area'] = self.compare_ydataA[lbl]
                 self.compare_ydata['Intensity'] = self.compare_ydataI[lbl]
-                self.plotter_with_border.plotter.plotIAforaves(self.xdata,self.ydata,self.params,compare_xdata = self.compare_xdata,compare_ydata = self.compare_ydata)
+                self.compare_labels['Area'] = 'Thresholding Method'
+                self.compare_labels['Intensity'] = 'Detecting Radius Method'
+                self.plotter_with_border.plotter.plotIAforaves(self.xdata,self.ydata,self.params,compare_xdata = self.compare_xdata,compare_ydata = self.compare_ydata,compare_labels = self.compare_labels)
             else:
                 self.warning_box.setText('Alternative Method Area and Intensity data not available')
                 self.warning_box.exec_()
@@ -330,6 +339,59 @@ class SingleVesViewer(QtWidgets.QWidget):
             self.one_ves_view.turn_on_threshold(self.threshold_on)
             
 
+            
+
+                           
+                           
+class saveboxview(QtWidgets.QWidget):
+
+    def __init__(self,data):
+        super().__init__()
+        save_array = None
+        if type(data) == dict:
+            
+            for key in data.keys():
+                if save_array is None:
+                    save_array  = np.array(data[key])
+                else:
+                    save_array = np.vstack((save_array,data[key]))
+                    
+           
+        else:
+            self.save_data = np.array(data)
+            
+        #hold data for saving
+        
+        self.save_data = save_array
+        
+        #Add Widgets to view
+        
+        self.EnterName = QtWidgets.QLineEdit('Enter File name')
+        self.save_btn = QtWidgets.QPushButton("Save")
+        
+        self.lyt = QtWidgets.QVBoxLayout()
+        self.lyt.addWidget(self.EnterName)
+        self.lyt.addWidget(self.save_btn)
+        
+        self.setLayout(self.lyt)
+        
+        
+        #connect save button to the function save
+        self.save_btn.clicked.connect(self.save)
+        self.EnterName.returnPressed.connect(self.save)
+        self.show()
+        
+    def save(self):
+        
+        np.savetxt(os.getcwd() + '/'+self.EnterName.text()+'.csv',self.save_data,delimiter = ',')
+        
+        #purge save_data
+        self.save_data = None
+        
+        self.close()
+        
+                
+        
 class myworker(QtCore.QObject):
     sig1 = pyqtSignal()
     sig2 = pyqtSignal()
