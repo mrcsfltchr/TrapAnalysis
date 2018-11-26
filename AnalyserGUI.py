@@ -29,6 +29,9 @@ from savebox import SaveBox,LoadBox as lb
 
 from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
+
+
+
 class MW(QtWidgets.QMainWindow):
     
     
@@ -706,7 +709,7 @@ class LoadBox(QtWidgets.QWidget):
         self.pathshower = QLineEdit('Select a Video')
         
         self.videopathlist = None
-        
+
         self.load_video = QPushButton('Load')
         
         #Add Button to create video queue
@@ -745,21 +748,24 @@ class LoadBox(QtWidgets.QWidget):
         #initialise dictionary to store paths of videos in
         
         self.videopathlist = {}
-        for i in range(1,4):
+        for i in range(1,5):
             self.videopathlist[str(i)] = []
             
         self.num_of_videos = 0
         
     def add_path(self):
-        #check number of paths user has attempted to add is less or equal to 4. if not send signal to owner of this class (main GUI) to raise message to user
-        self.num_of_videos += 1
-        if self.num_of_videos <=4:
-            
-            self.videopathlist[str(self.num_of_videos)].append(self.pathshower.text())
+        if self.videopathlist is not None:
+            #check number of paths user has attempted to add is less or equal to 4. if not send signal to owner of this class (main GUI) to raise message to user
+            self.num_of_videos += 1
+            if self.num_of_videos <=4:
+                
+                self.videopathlist[str(self.num_of_videos)].append(self.pathshower.text())
 
+            else:
+                self.loaderror.emit()
         else:
-            loaderror.emit()
-
+            self.loaderror.emit()
+            
 class VideoBorder(QtWidgets.QFrame):
 
     def __init__(self):
