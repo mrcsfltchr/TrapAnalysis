@@ -13,9 +13,12 @@ import qimage2ndarray as qnd
 from AnnotatedVidViewer import TrapViewer
 import pandas as pd
 from skimage.draw import circle
-
+from BackgroundFinder import BackgroundFinder
 from HeatPlotGenerator import HeatPlotGenerator
 import sys
+
+
+
 class Analyser(object):
 
     def __init__(self,path):
@@ -29,6 +32,11 @@ class Analyser(object):
         self.videopath = path
         self.frames = None       
 
+
+        #add class which handles background extraction
+
+        self.bgfinder = BackgroundFinder()
+        
 
         #data repositories
 
@@ -78,9 +86,10 @@ class Analyser(object):
         return frames
 
 
+
+    
         
-        
-    def get_traps(self):
+    def get_traps(self,drug_start_frame):
         #for now assumes that the traps are visible in last frame of video. Could also add feature for user
         #selection but that will limit the speed of automated analysis
         '''
@@ -88,7 +97,7 @@ class Analyser(object):
         
         self.trapgetter.get_trap_positions(self.visibletrapframe)
         '''
-        self.vframe = self.frames[400]
+        self.vframe = self.frames[drug_start_frame]
         self.trapgetter.get_vesicle_positions(self.vframe)
         traps,labels = self.trapgetter.remove_duplicates() 
 

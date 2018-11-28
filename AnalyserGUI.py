@@ -29,7 +29,7 @@ from savebox import SaveBox,LoadBox as lb
 
 from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
-
+from BackgroundFinder import BackgroundFinder
 
 
 class MW(QtWidgets.QMainWindow):
@@ -93,6 +93,9 @@ class AnalyserPanel(QWidget):
         self.load_history.clicked.connect(self.show_load)
         
 
+        #add an object which handles automatic finding of the drug arrival frame and frame in which to threshold to find intial vesicle positions
+
+        self.bgf = BackgroundFinder()
         
         
         self.loadbox.choosevideo.clicked.connect(self.getfile)
@@ -171,6 +174,8 @@ class AnalyserPanel(QWidget):
         
         ''' self.show() '''
 
+
+    
     def purge(self):
 
         #reset analyser which contains the data. Reset thread as might contain data\
@@ -577,11 +582,26 @@ class AnalyserPanel(QWidget):
             self.loadbox.pathshower.setText(fname[0])
             self.analyser.videopath = fname[0]
 
+    def no_manual_override(self):
+        
+        self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
+        
     def get_traps(self):
 
+
+        #first use the background finder to find the frame in which to threshold intensity
+        self.bgf.get_background(self.analyser.frames)
+        self.bgf.get_data_gradient()
+        self.bgf.find_correct_gaussian_scale()
+
+        self.AControl.has_been_overriden = True
+        self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
+        self.AControl.override_warning.rejected.connect(self.no_manual_override)
+        
+        
         if self.has_frames:
             try:
-                self.analyser.get_traps()
+                self.analyser.get_traps(int(self.bgf.peak_begin_frame))
                 
                 #Once traps have been successfully found, make them available for display on video view
                 

@@ -2,6 +2,8 @@
 from qtpy import QtGui,QtCore,QtWidgets
 import numpy as np
 from PyQt5.QtCore import pyqtSignal
+from qtpy.QtWidgets import QMessageBox
+
 
 class AnalysisLauncher(QtWidgets.QWidget):
 
@@ -16,7 +18,8 @@ class AnalysisLauncher(QtWidgets.QWidget):
         
 
         self.msgbox = QtWidgets.QMessageBox()
-
+        self.override_warning = OverrideWarningBox()
+        self.has_been_overriden = False
         
         self.t0 = None
         self.tmax = None
@@ -30,7 +33,7 @@ class AnalysisLauncher(QtWidgets.QWidget):
         
         
         self.tmaxselector.currentTextChanged.connect(self.update_exp_frames)
-        self.t0selector.currentTextChanged.connect(self.update_exp_frames)
+        self.t0selector.currentTextChanged.connect(self.override_check)
         
         
         #create button to trigger analysis
@@ -95,6 +98,13 @@ class AnalysisLauncher(QtWidgets.QWidget):
             self.msgbox.show()
 
 
+    def override_check(self):
+
+        if self.has_been_overriden:
+            self.override_warning.exec_()
+
+        else:
+            self.update_exp_frames()
 
     def pre_analysis_check(self):
 
@@ -119,3 +129,17 @@ class AnalysisLauncher(QtWidgets.QWidget):
         self.multi_pressed_flag = True
         
         self.pre_analysis_check()
+
+class MsgBox(QtWidgets.QMessageBox):
+    def __init__(self):
+        QtWidgets.QMessageBox.__init__(self)
+                                
+                                
+        self.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        self.setDefaultButton(QMessageBox.Ok)
+
+class OverrideWarningBox(MsgBox):
+    def __init__(self):
+        MsgBox.__init__(self)
+
+        self.setText('You are about to override the drug arrival time which has been automatically determined. Are you sure you want to do this? Click ok to proceed')
