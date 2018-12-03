@@ -158,7 +158,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         self.setLayout(self.lyt)
 
         if self.multividflag:
-            self.addVideoSelector(self.labels)
+            self.addVideoSelector(self.labels_by_vid)
         self.show()
 
 
@@ -172,8 +172,7 @@ class SingleVesViewer(QtWidgets.QWidget):
 
         vid = self.video_select.currentText()
 
-        for num in range(0,self.label_select.count()):
-            self.label_select.removeItem(num)
+        self.label_select.clear()
 
         
         self.label_select.addItems(self.activelabels_by_vid[vid].astype(str))
@@ -190,12 +189,13 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         
         if type(traps) != dict:
-             self.frames = frames
+             self.frames_by_vid = frames
              self.trap_positions = traps
              self.labels = labels
              self.activelabels = activelabels
              return False
         else:
+            key = list(traps.keys())[0]
             #set default display of labels and the corresponding trap positions to work out how to display single trap contents
             self.trap_positions = traps[key]
             self.labels = labels[key]
@@ -218,15 +218,16 @@ class SingleVesViewer(QtWidgets.QWidget):
             return -1
 
 
-        self.videoselect.addItems(np.array(list(trap_labels.keys())).astype(str))
+        self.video_select.addItems(np.array(list(trap_labels.keys())).astype(str))
         combo_layout = QtWidgets.QHBoxLayout()
         combo_layout.addWidget(self.video_select)
         combo_layout.addWidget(self.label_select)
 
+        self.combo_container = QtWidgets.QWidget()
         self.combo_container.setLayout(combo_layout)
         self.lyt.addWidget(self.combo_container,3,0)
         self.setLayout(self.lyt)
-        self.videoselect.currentTextChanged.connect(self.displaylabels_by_vidid)
+        self.video_select.currentTextChanged.connect(self.displaylabels_by_vidid)
         
         
         
@@ -318,7 +319,10 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         print(self.centres)
         if self.centres is not None and  self.vesiclelife is not None:
-            self.one_ves_view.assign_images(self.vesiclelife[self.t0:self.tmax],self.centres[label])
+            if self.multividflag:
+                self.one_ves_view.assign_images(self.vesiclelife,self.centres[label])
+            else:
+                self.one_ves_view.assign_images(self.vesiclelife[self.t0:self.tmax],self.centres[label])
 
         else:
             self.warning_box.setText('Either the vesicle centres data has not been supplied or the video has not been assigned.\n You will need to either press "Display" to load video or ensure that the analysis has been run.')
@@ -357,7 +361,11 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         self.visualise_box_contents(label)
         print(self.vesiclelife)
-        self.one_ves_view.assign_images(self.vesiclelife[self.t0:self.tmax])
+        if self.multividflag:
+            self.one_ves_view.assign_images(self.vesiclelife)
+        else:
+            self.one_ves_view.assign_images(self.vesiclelife[self.t0:self.tmax])
+            
     
         return 0
     
@@ -382,7 +390,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         print('This is the trap',trap)
         
-        clip = np.zeros_like(self.frames[key][0])
+        clip = np.zeros_like(self.frames_by_vid[key][0])
         
         try:
             #here we create a binary mask of shape 512*512 (frame size of video) such that only pixels within the labelled trap have value 1 and the rest 0
@@ -398,11 +406,11 @@ class SingleVesViewer(QtWidgets.QWidget):
         #Here exploit numpy array broadcasting. First flatten each frame in the full video into a vector so that we get a 2d array of shape, No.of frames of video requested by user  by (512*512). Then we multiply each of these vectors by the binary mask calculated just before to extract the pixels within the requested trap. Then finally we remove the non zero pixels and reshape.
         
         
-        self.vesiclelife = self.frames[key].reshape(self.frames[key].shape[0],self.frames[key].shape[1]*self.frames[key].shape[2])*clip.flatten()
+        self.vesiclelife = self.frames_by_vid[key].reshape(self.frames_by_vid[key].shape[0],self.frames_by_vid[key].shape[1]*self.frames_by_vid[key].shape[2])*clip.flatten()
         
         self.vesiclelife = self.vesiclelife[self.vesiclelife !=0]
         
-        self.vesiclelife = self.vesiclelife.reshape(self.frames[key].shape[0],31,31)
+        self.vesiclelife = self.vesiclelife.reshape(self.frames_by_vid[key].shape[0],31,31)
 
 
     def rectangle(self,start, end=None, extent=None, shape=None):

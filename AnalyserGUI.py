@@ -208,6 +208,9 @@ class AnalyserPanel(QWidget):
             self.msgbox.exec_()
         
             return -1
+
+        frames_dict = {}
+        frames_dict['1'] = self.analyser.frames
         
         if self.sv is not None:
             
@@ -215,7 +218,7 @@ class AnalyserPanel(QWidget):
         
     
         if self.mode == 'directional':
-            self.sv = SingleVesViewer(self.analyser.frames,mode = 'directional')
+            self.sv = SingleVesViewer(frames_dict,mode = 'directional')
         
     
     
@@ -276,11 +279,20 @@ class AnalyserPanel(QWidget):
         label_as_str = self.sv.label_select.currentText()
     
         self.analyser.delete_vesicle(label_as_str)
-    
-        self.sv.label_select.clear()
-    
-        self.sv.label_select.addItems(list(self.analyser.bg_sub_intensity_trace.keys()))
-    
+
+        #if multivideo mode need to also deleted label from analyser by vid
+
+        if self.sv.multividflag:
+            vid = self.sv.video_select.currentText()
+            self.sv.activelabels_by_vid[vid] = self.sv.activelabels_by_vid[vid][self.sv.activelabels_by_vid[vid] != int(label_as_str)]
+            self.activelabels_byvid[key] = self.activelabels_byvid[key][self.activelabels_byvid[key] != int(label_as_str)]
+            
+            self.sv.displaylabels_by_vidid()
+        
+        else:
+            self.sv.label_select.clear()
+            self.sv.label_select.addItems(list(self.analyser.bg_sub_intensity_trace.keys()))
+            
     
     def donemessage(self):
         
@@ -507,10 +519,47 @@ class AnalyserPanel(QWidget):
 
         self.save_data_btn.clicked.connect(self.save_data)
         print('Keys for dictionary of frames ,' , self.analyser.multivid_frames.keys())
-        
-        #Plan is to stick videos together as they would be in the traps. Then must readjust the trap centre coordiates by the corresponding offset vector of the origin for each video.
-        #This must also be done for the particle centre coordinates.
+        if self.sv is not None:
+
+            self.sv = None
+        if self.mode == 'directional':
+
+
+            self.sv = SingleVesViewer(self.analyser.multivid_frames,self.analyser.traps_by_vid,self.analyser.labels_by_vid,self.activelabels_byvid,self.analyser.trapgetter.trapdimensions,self.mode)
+        else:
+            self.sv = SingleVesViewer(self.analyser.multivid_frames,self.analyser.traps_by_vid,self.analyser.labels_by_vid,self.activelabels_byvid,self.analyser.trapgetter.trapdimensions)
+
+        self.sv.set_centres(self.analyser.centres)
+
+        self.sv.t0 = self.AControl.t0
+        self.sv.tmax = self.AControl.tmax
             
+        #add plotting_data
+        self.sv.ydataI = self.analyser.bg_sub_intensity_trace
+        self.sv.ydataA = self.analyser.areatrace
+        
+
+        #add data for comparison, determined by a separate method.
+            
+            
+        self.sv.compare_ydataI = self.analyser.second_bg_si_trace
+        self.sv.compare_ydataA = self.analyser.secondareatrace
+            
+
+            
+            
+            
+        #Add connections to heat plot generator from buttons in the single vesicle viewer
+        self.sv.delete.clicked.connect(self.delete_vesicle_and)
+        self.sv.interact_display.accepted.connect(self.get_heat_plot)
+        self.sv.save_heat.clicked.connect(self.prepare_heat_data4save)
+        #Add connection to directional heat_plot_gen
+            
+            
+        self.sv.proceed_to_directional_query.accepted.connect(self.create_persisting_times)
+
+
+        print(self.analyser.trapgetter.trap_positions)           
                 
     def run_analysis(self):
     
