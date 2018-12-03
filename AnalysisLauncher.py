@@ -111,7 +111,7 @@ class AnalysisLauncher(QtWidgets.QWidget):
 
 
         if self.t0 is None or self.tmax is None:
-            self.msgbox.setText('You have not selected valid starting and ending frames for the\n experimental analysis')
+            self.msgbox.setText('You have not selected valid starting and ending frames for the\n experimental analysis. It may be that you have not loaded the first video to choose the end frame of the experiment.')
 
             self.msgbox.show()
 

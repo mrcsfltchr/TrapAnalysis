@@ -8,14 +8,23 @@ from SingleVesPlotter import Plotter
 import os
 
 class SingleVesViewer(QtWidgets.QWidget):
-    def __init__(self,frames,traps = None,labels= None,box_dimensions = None,mode = 'standard'):
+    def __init__(self,frames,traps = None,labels= None,active_labels = None,box_dimensions = None,mode = 'standard'):
 
         QtWidgets.QWidget.__init__(self)
 
+
+        #be aware that for a lazy design effort some of the properties of the instance of this class, which is possessed by the main 'AnalyserGUI' panel, are set by direct variable assignment within methods of the 'AnalyserGUI' class.
+        #This is a manifestation of the ability of python class instance properties to be accessed and changed by external functions. This is not consistently used. Some 'get' and 'set' functions have been written.
+
+        
         #store frames as a dictionary
-        self.frames = frames
-        self.trap_positions = traps
-        self.labels = labels
+        
+
+        #this function checks if the input traps and labels are spread over many videos or just one. It sets the structure of the trap position and trap label data stores accordingly and returns either True or False depending on whether there are several videos or just one
+        
+        self.multividflag = self.checkformultiness(frames,traps,labels,active_labels)
+                    
+                
         self.box_dimensions = box_dimensions
         self.centres = None
         #need to set length of video
@@ -97,10 +106,19 @@ class SingleVesViewer(QtWidgets.QWidget):
         self.label_select_lbl = QtWidgets.QLabel('Select Trap to view')
         
         self.label_select = QtWidgets.QComboBox()
-    
+        self.video_select = QtWidgets.QComboBox()
+
+        #create a subwidget which will be positioned in the layout. Initially for the single video analysis case this will seem redundant as it will just contain a single widget itself. But for the multi video case
+        #this will also contain a combobox to select which video the vesicle is in
+        self.combo_container = QtWidgets.QWidget()
+        container_layout = QtWidgets.QHBoxLayout()
+        container_layout.addWidget(self.label_select)
+        self.combo_container.setLayout(container_layout)
+        
         if self.labels is not None:
-            self.label_select.addItems(self.labels.astype(str))
-    
+            self.label_select.addItems(np.array(self.activelabels).astype(str))
+
+        
         # video viewer
         self.one_ves_view = livestream(qnd,images = None,annotations_on = False)
         
@@ -125,7 +143,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         
         self.lyt.addWidget(self.label_select_lbl,2,0)
-        self.lyt.addWidget(self.label_select,3,0)
+        self.lyt.addWidget(self.combo_container,3,0)
         self.lyt.addWidget(self.one_ves_view,0,1)
         self.lyt.addWidget(self.threshold_control,1,1)
         self.lyt.addWidget(self.go,4,0)
@@ -138,10 +156,84 @@ class SingleVesViewer(QtWidgets.QWidget):
         self.lyt.addWidget(self.delete,3,1)
         
         self.setLayout(self.lyt)
-    
+
+        if self.multividflag:
+            self.addVideoSelector(self.labels)
         self.show()
-    
-    
+
+
+
+    def set_videoids(self,ids):
+
+        self.videoselect.addItems(ids)
+        
+        
+    def displaylabels_by_vidid(self):
+
+        vid = self.video_select.currentText()
+
+        for num in range(0,self.label_select.count()):
+            self.label_select.removeItem(num)
+
+        
+        self.label_select.addItems(self.activelabels_by_vid[vid].astype(str))
+        self.labels = self.labels_by_vid[vid]
+        
+        self.trap_positions = self.traps_by_vid[vid]
+        self.frames = self.frames_by_vid[vid]
+
+        
+    def checkformultiness(self,frames,traps,labels,activelabels):
+
+        if frames is None or traps is None or labels is None or activelabels is None:
+            return False
+        
+        
+        if type(traps) != dict:
+             self.frames = frames
+             self.trap_positions = traps
+             self.labels = labels
+             self.activelabels = activelabels
+             return False
+        else:
+            #set default display of labels and the corresponding trap positions to work out how to display single trap contents
+            self.trap_positions = traps[key]
+            self.labels = labels[key]
+            self.frames = frames[key]
+            self.activelabels = activelabels[key]
+            #set dictionary of traps and labels for each video
+            self.traps_by_vid = traps
+            self.labels_by_vid = labels
+            self.frames_by_vid = frames
+            self.activelabels_by_vid = activelabels
+            return True
+            
+    def addVideoSelector(self,trap_labels):
+
+        #this function accepts a dictionary where the keys are the labels of each video, and the values of each key are the labels of the vesicles in that video.
+
+        if type(trap_labels) != dict:
+            self.warning_box.setText('Invalid trap label format. This must be a dictionary with keys as the identifier of each video, and values equal to the labels of the vesicles detected in that video')
+            self.warning_box.exec_()
+            return -1
+
+
+        self.videoselect.addItems(np.array(list(trap_labels.keys())).astype(str))
+        combo_layout = QtWidgets.QHBoxLayout()
+        combo_layout.addWidget(self.video_select)
+        combo_layout.addWidget(self.label_select)
+
+        self.combo_container.setLayout(combo_layout)
+        self.lyt.addWidget(self.combo_container,3,0)
+        self.setLayout(self.lyt)
+        self.videoselect.currentTextChanged.connect(self.displaylabels_by_vidid)
+        
+        
+        
+    def set_centres(self,centres):
+        
+        self.centres = centres
+        
     def mode_directional_on(self,mode):
     
         if mode != 'directional':
@@ -271,9 +363,12 @@ class SingleVesViewer(QtWidgets.QWidget):
     
     
     def set_annotations(self,traps = None,labels = None,box_dimensions = None):
-    
-        self.trap_positions = traps
-        self.labels = labels
+
+
+        
+        #first check if only one video has been loaded, or several
+        self.checkformultiness()
+        
         self.box_dimensions = box_dimensions
     
     
@@ -300,7 +395,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         except:
             raise IndexError
         
-        #Here exploit numpy array broadcasting. First flatten each frame in the full video into a vector so that we get a 2d array of shape, No.of frames of video requested by user  X (512*512). Then we multiply each of these vectors by the binary mask calculated just before to extract the pixels within the requested trap. Then finally we remove the non zero pixels and reshape.
+        #Here exploit numpy array broadcasting. First flatten each frame in the full video into a vector so that we get a 2d array of shape, No.of frames of video requested by user  by (512*512). Then we multiply each of these vectors by the binary mask calculated just before to extract the pixels within the requested trap. Then finally we remove the non zero pixels and reshape.
         
         
         self.vesiclelife = self.frames[key].reshape(self.frames[key].shape[0],self.frames[key].shape[1]*self.frames[key].shape[2])*clip.flatten()

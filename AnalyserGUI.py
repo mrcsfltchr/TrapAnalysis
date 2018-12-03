@@ -11,22 +11,18 @@ from qtpy import QtGui,QtWidgets,QtCore
 from qtpy.QtWidgets import QWidget,QMainWindow, QApplication,QPushButton,QComboBox,QProgressBar,QFileDialog, QGridLayout, QLabel,QLineEdit,QMessageBox
 from PyQt5.QtCore import pyqtSignal,QThread
 from matplotlib import pyplot as plt
-
 from trapanalysis import TrapGetter
 from Analyser import Analyser
 from AnnotatedVidViewer import TrapViewer
 import sys
 import os
 import time
-
-
 import qimage2ndarray as qnd
 from QtImageViewer import QtImageViewer, handleLeftClick
 from SingleVesViewer import SingleVesViewer
 from AnalysisLauncher import AnalysisLauncher
 import pandas as pd
 from savebox import SaveBox,LoadBox as lb
-
 from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
 from BackgroundFinder import BackgroundFinder
@@ -226,7 +222,7 @@ class AnalyserPanel(QWidget):
         #if trap positions have been found it is safe to bring up video viewer for contents of single traps.
         if self.analyser.trapgetter.trap_positions is not None:
             
-            self.sv.set_annotations(self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions)
+            self.sv.set_annotations(traps = self.analyser.trapgetter.trap_positions,labels = self.analyser.trapgetter.labels,box_dimensions = self.analyser.trapgetter.trapdimensions)
             print(self.analyser.trapgetter.labels)
             self.sv.label_select.addItems(self.analyser.trapgetter.labels.astype(str).tolist())
         #if the analysis has been run and the intensity traces, centres_of_vesicles in each frame, areas and t0 and tmax have been defined it is safe to allow plotting function and button to show detected vesicle centres overlayed on video
@@ -234,7 +230,7 @@ class AnalyserPanel(QWidget):
         
             
         
-        if self.analyser.bg_sub_intensity_trace is not None:
+        if self.analyser.bg_sub_intensity_trace != {}:
         
             #if intensity data is there assume that the active traps have been filtered correctly so update the option box for trap viewing to only the active traps
             
@@ -259,8 +255,13 @@ class AnalyserPanel(QWidget):
             
             self.sv.proceed_to_directional_query.accepted.connect(self.create_persisting_times)
         if self.analyser.centres is not None:
-            self.sv.centres = self.analyser.centres
+            self.sv.set_centres(self.analyser.centres)
 
+    def generate_multi_vidsvv(self):
+
+        #this function generates the single video viewer with suitable feature for viewing vesicles which are spread across multiple different video files.
+
+        return None
 
     def get_heat_plot(self):
     
@@ -359,9 +360,27 @@ class AnalyserPanel(QWidget):
     
         #Save all relevant data, by creating a pop up window. In this window user is prompted to enter a Date and Time to identify files. It then proceeds to save files named "trap_positions_Date_Time.csv". "intensities_Date_Time.csv" etc.
     
-    
-        labelled_traps = np.hstack((self.analyser.trapgetter.labels[:,np.newaxis],self.analyser.trapgetter.trap_positions))
-    
+        if not self.AControl.multi_pressed_flag:
+            
+            labelled_traps = np.hstack((self.analyser.trapgetter.labels[:,np.newaxis],self.analyser.trapgetter.trap_positions))
+
+        else:
+            all_traps = None
+            all_labels = None
+            
+            for key in self.loadbox.videopathlist.keys():
+                if all_traps is None:
+                    
+                    all_traps = self.analyser.traps_by_vid[key]
+                    all_labels = self.analyser.labels_by_vid[key]
+                else:
+                    all_traps = np.vstack((all_traps,self.analyser.traps_by_vid[key]))
+                    all_labels = np.concatenate((all_labels,self.analyser.labels_by_vid[key]))
+                    print(all_traps.shape)
+                    print(all_labels.shape)
+                    
+            labelled_traps = np.hstack((all_labels[:,np.newaxis],all_traps))
+            
         self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.areatrace,self.analyser.centres,self.AControl.t0,self.AControl.tmax)
     
         self.sb.show()
@@ -424,10 +443,21 @@ class AnalyserPanel(QWidget):
             
         else:
             print('multi run analysis function about to run')
+
+
+            self.remove_empty_vid_paths()
             self.multi_run_analysis()
             
             
-            
+
+    def remove_empty_vid_paths(self):
+
+        #first delete unfilled videopaths in the user created list.
+        
+        for key in list(self.loadbox.videopathlist.keys()):
+            if self.loadbox.videopathlist[key] is None:
+                self.loadbox.videopathlist.pop(key)
+                    
     def proceed_yes_or_no(self,ret):
         
         print(ret, "hi")
@@ -435,17 +465,22 @@ class AnalyserPanel(QWidget):
             if not self.AControl.multi_pressed_flag:
                 self.run_analysis()
             else:
+                self.remove_empty_vid_paths()
                 self.multi_run_analysis()
                 
     def multi_run_analysis(self):
+        self.activelabels_byvid = {}
+         
         label_offset = 0
         for key in self.loadbox.videopathlist.keys():
             #first load the new video
+            
+            
             self.analyser.videopath = self.loadbox.videopathlist[key]
             
             self.analyser.multivid_frames[key]= self.analyser.load_frames(self.AControl.t0,self.AControl.tmax)
             
-            self.analyser.traps_by_vid[key], self.analyser.labels_by_vid[key] = self.analyser.get_traps()
+            self.analyser.traps_by_vid[key], self.analyser.labels_by_vid[key] = self.get_traps()
             
             self.analyser.labels_by_vid[key] += label_offset
             
@@ -464,11 +499,15 @@ class AnalyserPanel(QWidget):
     
                 self.analyser.get_clips_alt()
                 self.analyser.classify_clips()
+                self.activelabels_byvid[key] = self.analyser.active_labels
                 self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()))
                 self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()))
                 self.analyser.subtract_background()          
+            print(self.analyser.labels_by_vid[key])
 
-            
+        self.save_data_btn.clicked.connect(self.save_data)
+        print('Keys for dictionary of frames ,' , self.analyser.multivid_frames.keys())
+        
         #Plan is to stick videos together as they would be in the traps. Then must readjust the trap centre coordiates by the corresponding offset vector of the origin for each video.
         #This must also be done for the particle centre coordinates.
             
@@ -513,12 +552,11 @@ class AnalyserPanel(QWidget):
             if self.mode == 'directional':
 
                 
-                self.sv = SingleVesViewer(frames_dict,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions,mode = 'directional')
+                self.sv = SingleVesViewer(frames_dict,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,list(self.analyser.bg_sub_intensity_trace.keys()),self.analyser.trapgetter.trapdimensions,mode = 'directional')
             else:
                 self.sv = SingleVesViewer(self.analyser.frames,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions)
-            self.sv.centres = self.analyser.centres
-            self.sv.label_select.clear()
-            self.sv.label_select.addItems(list(self.analyser.bg_sub_intensity_trace.keys()))
+            self.sv.set_centres(self.analyser.centres)
+
             self.sv.t0 = self.AControl.t0
             self.sv.tmax = self.AControl.tmax
             
@@ -528,7 +566,7 @@ class AnalyserPanel(QWidget):
             
             print(self.sv.ydataI)
             print(self.sv.ydataA)
-            
+
             
             #add data for comparison, determined by a separate method.
             
@@ -601,18 +639,19 @@ class AnalyserPanel(QWidget):
         
         if self.has_frames:
             try:
-                self.analyser.get_traps(int(self.bgf.peak_begin_frame))
+                traps,labels = self.analyser.get_traps(int(self.bgf.peak_begin_frame))
                 
                 #Once traps have been successfully found, make them available for display on video view
                 
                 self.display.videoviewer.make_annotations_available(self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels)
             
-            
+                return traps,labels
             
             except:
                 self.msgbox.setText('Getting traps failed. Check Kernel, and that the visibility of the traps in the\n last frame is good')
                 self.msgbox.show()
 
+            
 
     def create_persisting_times(self):
         

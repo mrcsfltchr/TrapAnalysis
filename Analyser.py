@@ -102,6 +102,7 @@ class Analyser(object):
         traps,labels = self.trapgetter.remove_duplicates() 
 
         return traps,labels
+    
     def rectangle(self,start, end=None, extent=None, shape=None):
     
         if extent is not None:
@@ -195,6 +196,9 @@ class Analyser(object):
         
         self.class_labels = self.class_labels.reshape(self.class_labels.shape[0],)
         print("class labels length, ",len(self.class_labels))
+
+        self.active_labels = self.trapgetter.labels[self.class_labels.astype(int) == 1]
+        self.activemask = self.mask[self.class_labels.astype(int) == 1]
         
     def process_clips(self,clips):
         #deprecated. Included in function classify_clips
@@ -214,8 +218,7 @@ class Analyser(object):
         
         #initialize active labels and active mask here.
         
-        self.active_labels = self.trapgetter.labels[self.class_labels.astype(int) == 1]
-        self.activemask = self.mask[self.class_labels.astype(int) == 1]
+
         
         counter = 0
         for frame in self.frames[self.t0frameNo:maxframe]:

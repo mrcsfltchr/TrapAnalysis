@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 from BackgroundFinder import BackgroundFinder
 
 
+
 with tf.TiffFile('/Users/MarcusF/Desktop/TrapAnalysis/260522_CecB-  PCPG vesicles- after flushing_1_MMStack_Pos31.ome-1.tif') as tif:
     frames = tif.asarray()
     
