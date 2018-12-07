@@ -873,7 +873,7 @@ class LoadBox(QtWidgets.QWidget):
             if self.num_of_videos <=4:
                 
                 self.videopathlist[str(self.num_of_videos)] = self.pathshower.text()
-
+                print(self.pathshower.text() + ' has been added to the queue')
             else:
                 self.loaderror.emit()
         else:
