@@ -11,6 +11,7 @@ from skimage.morphology import binary_dilation
 from skimage.filters import sobel
 from skimage.feature import peak_local_max
 from scipy.ndimage import distance_transform_edt
+import os
 #This project
 
 
@@ -22,7 +23,7 @@ class TrapGetter(object):
         
         self.frame = None
         
-        self.kernel_path = '/Users/MarcusF/Desktop/TrapAnalysis/initialkernel.txt'
+        self.kernel_path = os.getcwd() + '/initialkernel.txt'
         
         self.point_intensity_limit = 0.3
         self.low_threshold= 450

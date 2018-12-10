@@ -41,7 +41,8 @@ class BackgroundFinder(object):
 
         for i in range(5,30,5):
             tic = time.time()
-            gradient = gaussian(self.gradient,i)
+            gradient = gaussian(self.gradient[:-100],i)
+            #clipped the gradient away from the last few frames as sometimes the intensity increases significantly at the end and the start of the experiment will not be this close to the end of the video anyway
             
             new_peak_val = np.max(gradient)
             

@@ -75,6 +75,8 @@ class AnalyserPanel(QWidget):
         
         self.loadbox = LoadBox()
         
+        #save the video directory path to save the analysed data in. This is solely for organising the results helpfully
+        self.video_directory = None
         #debugging process convenience tool: Upload previous Analysis
         
         self.save_data_btn = QtWidgets.QPushButton('Save Data')
@@ -150,6 +152,7 @@ class AnalyserPanel(QWidget):
         self.has_frames = False
 
         self.loadbox.load_video.clicked.connect(self.loadpressed)
+        
         self.layout = QGridLayout()
 
         self.layout.addWidget(self.display,0,3)
@@ -325,15 +328,23 @@ class AnalyserPanel(QWidget):
             
     def loadpressed(self):
         
+        #first get directory
+
        
         
         if self.analyser.videopath == '':
+            
+                    
+
+            
+            
             self.msgbox.setText('No File path has been set, Please select a compatible video file')
             self.msgbox.show()
         
         else:
             
-            
+            self.video_directory = self.analyser.videopath[::-1].partition('/')[2][::-1] + '/'
+            print(self.video_directory)            
             
             
             
@@ -393,7 +404,8 @@ class AnalyserPanel(QWidget):
                     
             labelled_traps = np.hstack((all_labels[:,np.newaxis],all_traps))
             
-        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.areatrace,self.analyser.centres,self.AControl.t0,self.AControl.tmax)
+        save_directory = self.video_directory
+        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.areatrace,self.analyser.centres,self.AControl.t0,self.AControl.tmax,save_directory)
     
         self.sb.show()
     

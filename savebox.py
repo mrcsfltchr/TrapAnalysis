@@ -18,7 +18,7 @@ class SaveBox(QWidget):
 
     #pass the dictionaries to be saved
 
-    def __init__(self,labelled_traps,intensities,areas,centres,t0,tmax):
+    def __init__(self,labelled_traps,intensities,areas,centres,t0,tmax,save_directory):
         
         
         QWidget.__init__(self)
@@ -26,6 +26,9 @@ class SaveBox(QWidget):
         
         self.save_thread = QtCore.QThread()
         
+        #save directory to save files to
+        
+        self.sd = save_directory
         #include warning box for errors
         self.warning_box = QtWidgets.QMessageBox()
 
@@ -79,7 +82,7 @@ class SaveBox(QWidget):
     def go_on_and_save(self):
 
 
-        np.savetxt(os.getcwd() + '/trap_positions' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv',self.labelled_traps,delimiter = ',')
+        np.savetxt(self.sd + 'trap_positions' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv',self.labelled_traps,delimiter = ',')
 
         
 
@@ -88,20 +91,20 @@ class SaveBox(QWidget):
 
         df = pd.DataFrame.from_dict(self.intensities,orient = 'index').transpose().fillna('')
 
-        df.to_csv(os.getcwd() + '/Intensities' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
+        df.to_csv(self.sd + 'Intensities' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
 
 
         #Save Areas
 
         df = pd.DataFrame.from_dict(self.areas,orient = 'index').transpose().fillna('')
 
-        df.to_csv(os.getcwd() + '/Areas' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
+        df.to_csv(self.sd + 'Areas' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
 
 
 
         #Save Detected Vesicle Centres. these are serialised using pickle as do not anticipate the user wanting to use the detected centre coordinates outside of python
 
-        file = open(os.getcwd() + '/Centres' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.txt','wb')
+        file = open(self.sd + 'Centres' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.txt','wb')
         
 
         pickle.dump(self.centres,file,pickle.HIGHEST_PROTOCOL)
@@ -109,7 +112,7 @@ class SaveBox(QWidget):
 
         #save t0 and tmax
 
-        np.savetxt(os.getcwd() + '/bookendtimes' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv',self.bookends,delimiter = ',')
+        np.savetxt(self.sd + '/bookendtimes' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv',self.bookends,delimiter = ',')
 
 
 
@@ -147,6 +150,7 @@ class LoadBox(QWidget):
         
         self.done_load_sig.connect(self.close)
 
+        self.directorypathchoose = QLineEdit('Input directory path in format "C:/..." without final "/"')
         self.datechoose = QLineEdit('Choose Date in format: "DD-MM-YY"')
         self.timechoose = QLineEdit('Choose Time in format: "HH:MM"')
         
@@ -155,6 +159,7 @@ class LoadBox(QWidget):
         self.timechoose.returnPressed.connect(self.load_regular)
         
         
+        self.layout.addWidget(self.directorypathchoose)
         
         self.layout.addWidget(self.datechoose)
 
@@ -175,11 +180,15 @@ class LoadBox(QWidget):
 
     def load_regular(self):
 
-    
+        
+        self.directorypath = self.directorypathchoose.text()
+        if self.directorypath[len(self.directorypath)-1]=='/':
+            self.directorypath=self.directorypath[:len(self.directorypath)-1]
+            
 
         try:
             #load intensities
-            intensity_df = pd.read_csv(os.getcwd() + '/Intensities' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.csv')
+            intensity_df = pd.read_csv(self.directorypath + '/Intensities' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.csv')
         except:
             self.msgbox.setText('Loading Intensity data failed, check the Date and Time have been written in the same way as\n when you saved the files')
             self.msgbox.exec_()
@@ -198,7 +207,7 @@ class LoadBox(QWidget):
         #load areas
         
         try:
-            area_df = pd.read_csv(os.getcwd() + '/Areas' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.csv')
+            area_df = pd.read_csv(self.directorypath + '/Areas' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.csv')
 
         except:
             self.msgbox.setText('Loading Intensity data failed, check the Date and Time have been written in the same way as\n when you saved the files')
@@ -211,7 +220,7 @@ class LoadBox(QWidget):
 
         
         #load trap_positions
-        self.labelled_traps = np.loadtxt(os.getcwd() + '/trap_positions' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.csv',delimiter = ',')
+        self.labelled_traps = np.loadtxt(self.directorypath + '/trap_positions' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.csv',delimiter = ',')
 
         labels_traps_split = np.hsplit(self.labelled_traps,[1,3])
         
@@ -224,14 +233,14 @@ class LoadBox(QWidget):
 
         
 
-        file = open(os.getcwd() + '/Centres' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.txt','rb')
+        file = open(self.directorypath+ '/Centres' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.txt','rb')
 
         self.data_deposit.analyser.centres = pickle.load(file)
     
 
         #load bookend times for experiment length
         
-        t0_tmax = np.loadtxt(os.getcwd() + '/bookendtimes' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.csv',delimiter = ',')
+        t0_tmax = np.loadtxt(self.directorypath + '/bookendtimes' + '_' + self.datechoose.text()+'_'+self.timechoose.text()+ '.csv',delimiter = ',')
         
         
         
