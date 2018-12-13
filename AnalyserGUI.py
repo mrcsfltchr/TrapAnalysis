@@ -244,8 +244,8 @@ class AnalyserPanel(QWidget):
             self.sv.label_select.addItems(list(self.analyser.bg_sub_intensity_trace.keys()))
             
             # Add plotting data
-            self.sv.ydataI = self.analyser.bg_sub_intensity_trace
-            self.sv.ydataA = self.analyser.areatrace
+            self.sv.ydataI = self.analyser.filtered_intensity_trace
+            self.sv.ydataA = self.analyser.filtered_areatrace
             
             if self.combo_switch_off:
                 self.sv.t0 = self.reloadt0
@@ -405,7 +405,7 @@ class AnalyserPanel(QWidget):
             labelled_traps = np.hstack((all_labels[:,np.newaxis],all_traps))
             
         save_directory = self.video_directory
-        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.areatrace,self.analyser.centres,self.AControl.t0,self.AControl.tmax,save_directory)
+        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.filtered_intensity_trace,self.analyser.areatrace,self.analyser.filtered_areatrace,self.analyser.centres,self.AControl.t0,self.AControl.tmax,save_directory)
     
         self.sb.show()
     
@@ -547,8 +547,8 @@ class AnalyserPanel(QWidget):
         self.sv.tmax = self.AControl.tmax
             
         #add plotting_data
-        self.sv.ydataI = self.analyser.bg_sub_intensity_trace
-        self.sv.ydataA = self.analyser.areatrace
+        self.sv.ydataI = self.analyser.filtered_intensity_trace
+        self.sv.ydataA = self.analyser.filtered_areatrace
         
 
         #add data for comparison, determined by a separate method.
@@ -622,8 +622,8 @@ class AnalyserPanel(QWidget):
             self.sv.tmax = self.AControl.tmax
             
             #add plotting_data
-            self.sv.ydataI = self.analyser.bg_sub_intensity_trace
-            self.sv.ydataA = self.analyser.areatrace
+            self.sv.ydataI = self.analyser.filtered_intensity_trace
+            self.sv.ydataA = self.analyser.filtered_areatrace
             
             print(self.sv.ydataI)
             print(self.sv.ydataA)

@@ -16,7 +16,7 @@ from skimage.draw import circle
 from BackgroundFinder import BackgroundFinder
 from HeatPlotGenerator import HeatPlotGenerator
 import sys
-
+from scipy.ndimage import gaussian_filter1d as smooth
 
 
 class Analyser(object):
@@ -44,9 +44,12 @@ class Analyser(object):
         self.secondintensitytrace = {}
         
         self.bg_sub_intensity_trace = {}
+        self.filtered_intensity_trace = {}
         self.second_bg_si_trace = {}
         
         self.areatrace = {}
+        self.filtered_areatrace = {}
+        
         self.secondareatrace = {}
         
         self.areaerrors = {}
@@ -73,7 +76,8 @@ class Analyser(object):
         self.bgintens = None
         self.heat_data = np.array([])
         self.HPG = HeatPlotGenerator()
-        
+    
+    
     def load_frames(self,t0 = None,tmax = None):
 
         with tf.TiffFile(self.videopath) as tif:
@@ -312,9 +316,12 @@ class Analyser(object):
         
             try:
                 self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
+                self.filtered_areatrace[str(label)] = smooth(self.areatrace[str(label)],40)
+                
                 self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
                 self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
+                self.filtered_areatrace[str(label)]=smooth(self.areatrace[str(label)],40)
                 self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
 
 
@@ -372,12 +379,14 @@ class Analyser(object):
         if self.bg_sub_intensity_trace[label_as_str] is not None:
     
             del self.bg_sub_intensity_trace[label_as_str]
+            del self.filtered_intensity_trace[label_as_str]
         elif self.intensitytrace[label_as_str] is not None:
             
             del self.intensitytrace[label_as_str]
 
         del self.areatrace[label_as_str]
 
+        del self.filtered_areatrace[label_as_str]
         del self.centres[label_as_str]
 
         
@@ -406,7 +415,7 @@ class Analyser(object):
         
         
     def plotnow(self,label):
-        self.plotIAforaves(30*np.arange(len(self.areatrace[str(label)])),self.areatrace[str(label)],30*np.arange(len(self.bg_sub_intensity_trace[str(label)])),self.bg_sub_intensity_trace[str(label)])
+        self.plotIAforaves(30*np.arange(len(self.filtered_areatrace[str(label)])),self.filtered_areatrace[str(label)],30*np.arange(len(self.bg_sub_intensity_trace[str(label)])),self.filtered_intensity_trace[str(label)])
     def plotIAforaves(self,xdataA,ydataA,xdataI= None,ydataI = None):
         
         
@@ -442,13 +451,16 @@ class Analyser(object):
         self.ls = livestream(qnd,video[t0:tmax],annotations_on = annotations,annotate_coords = self.centres[str(label)])
        
         
-    def subtract_background(self):
+    def subtract_background(self,sigma = 40):
         
         for key in self.intensitytrace.keys():
             self.bg_sub_intensity_trace[key] = np.array(self.intensitytrace[key])-self.bgintens
             self.second_bg_si_trace[key] = np.array(self.secondintensitytrace[key]) -self.bgintens
             
+            self.filtered_intensity_trace[key] = smooth(self.bg_sub_intensity_trace[key],sigma)
+            max_data = np.max(self.filtered_intensity_trace[key])
             
+            self.filtered_intensity_trace[key] = self.filtered_intensity_trace[key]/max_data
             
     def heat_data_generator(self):
 
@@ -457,19 +469,19 @@ class Analyser(object):
         self.heat_data = np.array([])
         
         maxlen = -1
-        for key in self.bg_sub_intensity_trace.keys():
+        for key in self.filtered_intensity_trace.keys():
             print(key)
-            length = self.bg_sub_intensity_trace[key].shape[0]
+            length = self.filtered_intensity_trace[key].shape[0]
             if length > maxlen:
                 maxlen = length
             
-        for key in self.bg_sub_intensity_trace.keys():
+        for key in self.filtered_intensity_trace.keys():
         
             if self.heat_data.shape[0] == 0:
-                self.heat_data = np.concatenate((self.bg_sub_intensity_trace[key],np.zeros((maxlen-self.bg_sub_intensity_trace[key].shape[0],))))
+                self.heat_data = np.concatenate((self.filtered_intensity_trace[key],np.zeros((maxlen-self.filtered_intensity_trace[key].shape[0],))))
             else:
                 
-                self.heat_data = np.vstack((self.heat_data,np.concatenate((self.bg_sub_intensity_trace[key],np.zeros((maxlen-self.bg_sub_intensity_trace[key].shape[0],))))))
+                self.heat_data = np.vstack((self.heat_data,np.concatenate((self.filtered_intensity_trace[key],np.zeros((maxlen-self.filtered_intensity_trace[key].shape[0],))))))
         lengths = []
         
         for i  in range(0,self.heat_data.shape[0]):
@@ -480,7 +492,7 @@ class Analyser(object):
             
             #make min = zero
             
-            self.heat_data[i,:] -= min_data
+            #self.heat_data[i,:] -= min_data
             
             #divide by the max to make the maximum intensity = 1
             
