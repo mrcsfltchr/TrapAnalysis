@@ -130,7 +130,7 @@ class Analyser(object):
         counter = 0
         for trap in self.trapgetter.trap_positions:
             
-            if self.mask.shape[0] >0:
+            if self.mask is not None:
                 
                 try:
                     self.mask = np.vstack((self.mask,self.rectangle(start = trap-[self.trapgetter.topboxrel,self.trapgetter.leftboxrel],end = trap +[self.trapgetter.bottomboxrel,self.trapgetter.rightboxrel])))
@@ -182,10 +182,13 @@ class Analyser(object):
     def sett0frame(self,frameno):
         
         self.t0frameNo = int(frameno)
-    def classify_clips(self):
+    def classify_clips(self,multivid = False):
         
         #classify contents of boxes in t = 0 frame, and then switch off recording for initially empty boxes
-        initial_frame = self.frames[self.t0frameNo]
+        if multivid:
+            initial_frame = self.frames[0]
+        else:
+            initial_frame = self.frames[self.t0frameNo]
         
         
         self.clips = initial_frame.flatten().T*self.mask
@@ -292,8 +295,10 @@ class Analyser(object):
         self.bgintens = np.average(A.frames[:,self.bgcentrecoords[0]-3:self.bgcentrecoords[0]+3,self.bgcentrecoords[1]-3:self.bgcentrecoords[1]+3],axis = (1,2))
         
     def extract_background(self,maxlen):
-        self.bgintens = np.average(self.frames[maxlen+1:])
-        
+        self.bgintens = np.average(self.frames[-5:])
+        print('Background is, ', self.bgintens)
+    
+    
     def extract_intensity(self,label,counter):
         
         threshold = threshold_otsu(self.clips[self.active_labels == label])
@@ -365,7 +370,10 @@ class Analyser(object):
             try:
             
                 self.intensitytrace[str(label)].append(av_intens)
+                print(self.intensitytrace[str(label)])
+            
             except KeyError:
+                
                 self.intensitytrace[str(label)] = [av_intens]
             
             try:
@@ -418,7 +426,7 @@ class Analyser(object):
         
         
     def plotnow(self,label):
-        self.plotIAforaves(30*np.arange(len(self.filtered_areatrace[str(label)])),self.filtered_areatrace[str(label)],30*np.arange(len(self.bg_sub_intensity_trace[str(label)])),self.filtered_intensity_trace[str(label)])
+        self.plotIAforaves(30*np.arange(len(self.filtered_areatrace[str(label)])),self.filtered_areatrace[str(label)],30*np.arange(len(self.bg_sub_intensity_trace[str(label)])),self.bg_sub_intensity_trace[str(label)])
     def plotIAforaves(self,xdataA,ydataA,xdataI= None,ydataI = None):
         
         
@@ -464,7 +472,7 @@ class Analyser(object):
             max_data = np.max(self.filtered_intensity_trace[key])
             
             self.filtered_intensity_trace[key] = self.filtered_intensity_trace[key]/max_data
-            
+            print('This is the filtered data, ' ,self.filtered_intensity_trace[key])
     def heat_data_generator(self):
 
         #first make sure heat data is array

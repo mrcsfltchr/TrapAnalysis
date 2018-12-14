@@ -244,7 +244,7 @@ class AnalyserPanel(QWidget):
             self.sv.label_select.addItems(list(self.analyser.bg_sub_intensity_trace.keys()))
             
             # Add plotting data
-            self.sv.ydataI = self.analyser.filtered_intensity_trace
+            self.sv.ydataI = self.analyser.bg_sub_intensity_trace
             self.sv.ydataA = self.analyser.filtered_areatrace
             
             if self.combo_switch_off:
@@ -503,6 +503,7 @@ class AnalyserPanel(QWidget):
             self.analyser.videopath = self.loadbox.videopathlist[key]
             
             self.analyser.multivid_frames[key]= self.analyser.load_frames(self.AControl.t0,self.AControl.tmax)
+            self.analyser.mask = None
             self.analyser.frames = self.analyser.multivid_frames[key]
             self.analyser.traps_by_vid[key], self.analyser.labels_by_vid[key] = self.get_traps(multividflag = True)
             
@@ -547,7 +548,7 @@ class AnalyserPanel(QWidget):
         self.sv.tmax = self.AControl.tmax
             
         #add plotting_data
-        self.sv.ydataI = self.analyser.filtered_intensity_trace
+        self.sv.ydataI = self.analyser.bg_sub_intensity_trace
         self.sv.ydataA = self.analyser.filtered_areatrace
         
 
@@ -622,7 +623,7 @@ class AnalyserPanel(QWidget):
             self.sv.tmax = self.AControl.tmax
             
             #add plotting_data
-            self.sv.ydataI = self.analyser.filtered_intensity_trace
+            self.sv.ydataI = self.analyser.bg_sub_intensity_trace
             self.sv.ydataA = self.analyser.filtered_areatrace
             
             print(self.sv.ydataI)
