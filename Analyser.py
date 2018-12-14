@@ -214,7 +214,7 @@ class Analyser(object):
         return clips
     
         
-    def analyse_frames(self,maxframe):
+    def analyse_frames(self,maxframe,multivid = False):
 
         print("labels length: " ,self.trapgetter.labels.shape[0])
         
@@ -222,7 +222,10 @@ class Analyser(object):
         
         #initialize active labels and active mask here.
         
-
+        if multivid:
+            self.t0frameNo = 0
+            maxframe = self.frames.shape[0]
+        
         
         counter = 0
         for frame in self.frames[self.t0frameNo:maxframe]:
