@@ -503,7 +503,7 @@ class AnalyserPanel(QWidget):
             self.analyser.videopath = self.loadbox.videopathlist[key]
             
             self.analyser.multivid_frames[key]= self.analyser.load_frames(self.AControl.t0,self.AControl.tmax)
-            
+            self.analyser.frames = self.analyser.multivid_frames[key]
             self.analyser.traps_by_vid[key], self.analyser.labels_by_vid[key] = self.get_traps()
             
             self.analyser.labels_by_vid[key] += label_offset
