@@ -54,7 +54,7 @@ class TrapGetter(object):
     
     
         mask = np.zeros_like(frame)
-        mask[frame > threshold+1] = 1
+        mask[frame > threshold] = 1
         distance_map = distance_transform_edt(mask)
         peaks = peak_local_max(distance_map,threshold_abs=3,min_distance=4)
     

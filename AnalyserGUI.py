@@ -504,7 +504,7 @@ class AnalyserPanel(QWidget):
             
             self.analyser.multivid_frames[key]= self.analyser.load_frames(self.AControl.t0,self.AControl.tmax)
             self.analyser.frames = self.analyser.multivid_frames[key]
-            self.analyser.traps_by_vid[key], self.analyser.labels_by_vid[key] = self.get_traps()
+            self.analyser.traps_by_vid[key], self.analyser.labels_by_vid[key] = self.get_traps(multividflag = True)
             
             self.analyser.labels_by_vid[key] += label_offset
             
@@ -524,7 +524,7 @@ class AnalyserPanel(QWidget):
                 self.analyser.get_clips_alt()
                 self.analyser.classify_clips()
                 self.activelabels_byvid[key] = self.analyser.active_labels
-                self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()))
+                self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()),multivid = True)
                 self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()))
                 self.analyser.subtract_background()          
             print(self.analyser.labels_by_vid[key])
@@ -685,7 +685,7 @@ class AnalyserPanel(QWidget):
         
         self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
         
-    def get_traps(self):
+    def get_traps(self,multividflag = False):
 
 
         #first use the background finder to find the frame in which to threshold intensity
@@ -694,13 +694,17 @@ class AnalyserPanel(QWidget):
         self.bgf.find_correct_gaussian_scale()
 
         self.AControl.has_been_overriden = True
+        
         self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
         self.AControl.override_warning.rejected.connect(self.no_manual_override)
         
         
         if self.has_frames:
             try:
-                traps,labels = self.analyser.get_traps(int(self.bgf.peak_begin_frame))
+                if multividflag:
+                    traps, labels = self.analyser.get_traps(0)
+                else:
+                    traps,labels = self.analyser.get_traps(int(self.bgf.peak_begin_frame))
                 
                 #Once traps have been successfully found, make them available for display on video view
                 
