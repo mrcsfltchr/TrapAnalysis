@@ -251,7 +251,7 @@ class Analyser(object):
                                     
                                  
             self.clips = frame.flatten().T*self.activemask
-
+            
             print(self.clips.shape[0])
             if self.clips.shape[0] ==0:
                 break
@@ -259,14 +259,18 @@ class Analyser(object):
             self.clips = self.clips[self.clips >0].reshape(self.clips.shape[0],31,31)
             if counter == 0:
                 # once the classifier has identified what it believes are the only boxes with vesicles inside at t0 the fates of these boxes are sealed. The contents of these boxes will be passed to the thresholding function and a potential vesicle centre identified. This is done in parallel and independently of the intensities recorded within the process which reclassifies the box contents in every frame.
-                self.firstactiveclips = self.clips
-                
-                print('first active clips has shape  ',self.firstactiveclips.shape)
                 
                 
+                
+                
+                self.firstactivemask = self.activemask
                 self.firstactivelabels = self.active_labels
                 
-                print('active labels in the beginning ', self.firstactivelabels)            
+                print('active labels in the beginning ', self.firstactivelabels) 
+                
+            self.firstactiveclips = frame.flatten().T*self.firstactivemask
+            self.firstactiveclips[self.firstactiveclips > 0].reshape(self.firstactiveclips.shape[0],31,31)
+            print('first active clips has shape  ',self.firstactiveclips.shape)
             self.zerominclips = self.clips - np.min(self.clips) 
             
             self.zero2oneclips = self.zerominclips/np.max(self.zerominclips)
