@@ -269,7 +269,7 @@ class Analyser(object):
                 print('active labels in the beginning ', self.firstactivelabels) 
                 
             self.firstactiveclips = frame.flatten().T*self.firstactivemask
-            self.firstactiveclips[self.firstactiveclips > 0].reshape(self.firstactiveclips.shape[0],31,31)
+            self.firstactiveclips = self.firstactiveclips[self.firstactiveclips > 0].reshape(self.firstactiveclips.shape[0],31,31)
             print('first active clips has shape  ',self.firstactiveclips.shape)
             self.zerominclips = self.clips - np.min(self.clips) 
             
