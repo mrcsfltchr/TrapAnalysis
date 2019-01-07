@@ -41,19 +41,32 @@ class Analyser(object):
         #data repositories
 
         self.intensitytrace = {}
+        self.firstintensitytrace = {}
+        
         self.secondintensitytrace = {}
+        self.firstsecondintensitytrace = {}
         
         self.bg_sub_intensity_trace = {}
+        self.bg_sub_firstintensity_trace = {}
+        
         self.filtered_intensity_trace = {}
+        self.filtered_first_intensity_trace = {}
+        
         self.second_bg_si_trace = {}
+        self.second_bg_fsi_trace = {}
         
         self.areatrace = {}
-        self.filtered_areatrace = {}
+        self.firstareatrace = {}
         
+        self.filtered_areatrace = {}
+        self.filtered_firstareatrace = {}
+        
+        self.firstsecondareatrace = {}
         self.secondareatrace = {}
         
         self.areaerrors = {}
         self.centres = {}
+        self.firstcentres = {}
         
         self.trapgetter = TrapGetter()
         
@@ -238,19 +251,22 @@ class Analyser(object):
                                     
                                  
             self.clips = frame.flatten().T*self.activemask
-            if counter == 0:
-                # once the classifier has identified what it believes are the only boxes with vesicles inside at t0 the fates of these boxes are sealed. The contents of these boxes will be passed to the thresholding function and a potential vesicle centre identified. This is done in parallel and independently of the intensities recorded within the process which reclassifies the box contents in every frame.
-                self.firstactiveclips = self.clips
-                
-                
-                self.firstactivelabels = self.active_labels
-                
+
             print(self.clips.shape[0])
             if self.clips.shape[0] ==0:
                 break
             
             self.clips = self.clips[self.clips >0].reshape(self.clips.shape[0],31,31)
-            
+            if counter == 0:
+                # once the classifier has identified what it believes are the only boxes with vesicles inside at t0 the fates of these boxes are sealed. The contents of these boxes will be passed to the thresholding function and a potential vesicle centre identified. This is done in parallel and independently of the intensities recorded within the process which reclassifies the box contents in every frame.
+                self.firstactiveclips = self.clips
+                
+                print('first active clips has shape  ',self.firstactiveclips.shape)
+                
+                
+                self.firstactivelabels = self.active_labels
+                
+                print('active labels in the beginning ', self.firstactivelabels)            
             self.zerominclips = self.clips - np.min(self.clips) 
             
             self.zero2oneclips = self.zerominclips/np.max(self.zerominclips)
@@ -578,11 +594,11 @@ class Analyser(object):
             self.bg_sub_firstintensity_trace[key] = np.array(self.firstintensitytrace[key])-self.bgintens
             self.second_bg_fsi_trace[key] = np.array(self.firstsecondintensitytrace[key]) -self.bgintens
 
-            self.filtered_firstintensity_trace[key] = smooth(self.bg_sub_firstintensity_trace[key],sigma)
-            max_data = np.max(self.filtered_firstintensity_trace[key])
+            self.filtered_first_intensity_trace[key] = smooth(self.bg_sub_firstintensity_trace[key],sigma)
+            max_data = np.max(self.filtered_first_intensity_trace[key])
 
-            self.filtered_firstintensity_trace[key] = self.filtered_firstintensity_trace[key]/max_data
-            print('This is the filtered data, ' ,self.filtered_firstintensity_trace[key])
+            self.filtered_first_intensity_trace[key] = self.filtered_first_intensity_trace[key]/max_data
+            print('This is the filtered data, ' ,self.filtered_first_intensity_trace[key])
             
             
     def heat_data_generator(self):

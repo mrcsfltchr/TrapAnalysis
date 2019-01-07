@@ -18,7 +18,7 @@ class SaveBox(QWidget):
 
     #pass the dictionaries to be saved
 
-    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,areas,firstareas,filtered_areas,centres,firstcentres,t0,tmax,save_directory):
+    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,first_filtered_intensities,areas,firstareas,filtered_areas,first_filtered_areas,centres,firstcentres,t0,tmax,save_directory):
         
         
         QWidget.__init__(self)
@@ -141,7 +141,7 @@ class SaveBox(QWidget):
         pickle.dump(self.centres,file,pickle.HIGHEST_PROTOCOL)
         file = open(self.sd + 'Detected_from_beginning_Centres' +'_' + self.save_Date.text()+'_' + self.save_Time.text()+'.txt','wb')
         pickle.dump(self.firstcentres,file,pickle.HIGHEST_PROTOCOL)
-        
+
         #save t0 and tmax
 
         np.savetxt(self.sd + '/bookendtimes' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv',self.bookends,delimiter = ',')

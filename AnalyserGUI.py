@@ -405,7 +405,7 @@ class AnalyserPanel(QWidget):
             labelled_traps = np.hstack((all_labels[:,np.newaxis],all_traps))
             
         save_directory = self.video_directory
-        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.filtered_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.areatrace,self.filtered_firstareatrace,self.analyser.filtered_areatrace,self.analyser.centres,self.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory)
+        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory)
     
         self.sb.show()
     
