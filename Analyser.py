@@ -238,7 +238,12 @@ class Analyser(object):
                                     
                                  
             self.clips = frame.flatten().T*self.activemask
-
+            if counter == 0:
+                # once the classifier has identified what it believes are the only boxes with vesicles inside at t0 the fates of these boxes are sealed. The contents of these boxes will be passed to the thresholding function and a potential vesicle centre identified. This is done in parallel and independently of the intensities recorded within the process which reclassifies the box contents in every frame.
+                self.firstactiveclips = self.clips
+                self.firstactivemask = self.activemask
+                self.firstactivelabels = self.active_labels
+                
             print(self.clips.shape[0])
             if self.clips.shape[0] ==0:
                 break
@@ -253,7 +258,7 @@ class Analyser(object):
             
             self.class_labels = self.class_labels.reshape(self.class_labels.shape[0],)
 
-            for label in self.active_labels:
+            for label in self.firstactivelabels:
                 self.extract_intensity(label,counter)
                 
             
@@ -301,36 +306,119 @@ class Analyser(object):
     
     def extract_intensity(self,label,counter):
         
-        threshold = threshold_otsu(self.clips[self.active_labels == label])
+        clip = self.clips[self.active_labels == label]
+        if clip.shape[0] > 0:
+            threshold = threshold_otsu(clip)
         
-        testclip = np.zeros_like(self.clips[self.active_labels == label].reshape(31,31))
+            testclip = np.zeros_like(self.clips[self.active_labels == label].reshape(31,31))
         
-        testclip[self.clips[self.active_labels == label].reshape(31,31) > threshold] = 1
+            testclip[self.clips[self.active_labels == label].reshape(31,31) > threshold] = 1
+        
+            try:
+                self.secondareatrace[str(label)].append(len(testclip[testclip >0]))
+            except KeyError:
+                self.secondareatrace[str(label)] = [len(testclip[testclip >0])]
+
+            dt = distance_transform_edt(testclip)
+
+            try:
+                centre = list(peak_local_max(dt,threshold_rel = 0.6)[0])
+                print(centre)
+                print(dt[centre[0],centre[1]])
+                rr,cc = circle(centre[0],centre[1],int(dt[centre[0],centre[1]]),shape = dt.shape)
+                img = np.zeros_like(dt)
+                img[rr,cc] = self.clips[self.active_labels == label][0][rr,cc]
+
+                try:
+                    self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
+                    self.filtered_areatrace[str(label)] = smooth(self.areatrace[str(label)],5)
+
+                    self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
+                except KeyError:
+                    self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
+                    self.filtered_areatrace[str(label)]=smooth(self.areatrace[str(label)],5)
+                    self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
+
+
+            except IndexError:
+                centre = []
+                try:
+                    self.missing_peaks[str(label)].append(counter)
+                except KeyError:
+                    self.missing_peaks[str(label)] = [counter]
+
+
+
+            if len(centre) >0:
+
+                print(self.active_labels)
+                print('Clip has shape: ', self.clips[self.active_labels == label][0].shape)
+
+                x1 = 4
+                y1 = 4
+                lx = 31
+                ly = 31
+                #check the box can fit into clip
+
+                centre = np.array(centre)
+                dims_min= np.array([x1,y1])
+                dims_max = np.array([lx-x1,ly-y1])
+
+                margins_from_edge = np.vstack(((centre-dims_min),(dims_max - centre)))
+                if np.any(margins_from_edge.flatten() < 0):
+                    x1 += np.min(margins_from_edge)
+                    y1 += np.min(margins_from_edge)
+
+
+                small_box_in_ves = self.clips[self.active_labels == label][0][centre[0]-y1:centre[0]+y1,centre[1]-x1:centre[1]+x1]
+                print(small_box_in_ves)
+                av_intens = np.average(small_box_in_ves)
+                print(av_intens)
+                try:
+
+                    self.intensitytrace[str(label)].append(av_intens)
+                    print(self.intensitytrace[str(label)])
+
+                except KeyError:
+
+                    self.intensitytrace[str(label)] = [av_intens]
+
+                try:
+                    self.centres[str(label)].append(centre)
+                except KeyError:
+                    self.centres[str(label)] = [centre]    
+
+
+        firstclip = self.firstclips[self.firstactivelabels == label]
+        threshold = threshold_otsu(firstclip)    
+        testclip = np.zeros_like(firstclip.reshape(31,31))
+        testclip[firstclip.reshape(31,31) > threshold] = 1
+        
         
         try:
-            self.secondareatrace[str(label)].append(len(testclip[testclip >0]))
+            self.firstsecondareatrace[str(label)].append(len(testclip[testclip >0]))
         except KeyError:
-            self.secondareatrace[str(label)] = [len(testclip[testclip >0])]
-            
-        dt = distance_transform_edt(testclip)
-            
+            self.firstsecondareatrace[str(label)] = [len(testclip[testclip >0])]
+
+        dt = distance_transform_edt(testclip)        
+
         try:
             centre = list(peak_local_max(dt,threshold_rel = 0.6)[0])
             print(centre)
             print(dt[centre[0],centre[1]])
             rr,cc = circle(centre[0],centre[1],int(dt[centre[0],centre[1]]),shape = dt.shape)
             img = np.zeros_like(dt)
-            img[rr,cc] = self.clips[self.active_labels == label][0][rr,cc]
-        
+            img[rr,cc] = firstclip[0][rr,cc]
+
             try:
-                self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
-                self.filtered_areatrace[str(label)] = smooth(self.areatrace[str(label)],5)
-                
-                self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
+                self.firstareatrace[str(label)].append(len(np.nonzero(img)[0]))
+                self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
+
+                self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
-                self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
-                self.filtered_areatrace[str(label)]=smooth(self.areatrace[str(label)],5)
-                self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
+                self.firstareatrace[str(label)] = [len(np.nonzero(img)[0])]
+                self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
+                self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 
 
         except IndexError:
@@ -339,13 +427,11 @@ class Analyser(object):
                 self.missing_peaks[str(label)].append(counter)
             except KeyError:
                 self.missing_peaks[str(label)] = [counter]
-          
-            
-            
+
         if len(centre) >0:
-            
-            print(self.active_labels)
-            print('Clip has shape: ', self.clips[self.active_labels == label][0].shape)
+
+            print(self.firstactivelabels)
+            print('Clip has shape: ', firstclip[0].shape)
 
             x1 = 4
             y1 = 4
@@ -361,27 +447,27 @@ class Analyser(object):
             if np.any(margins_from_edge.flatten() < 0):
                 x1 += np.min(margins_from_edge)
                 y1 += np.min(margins_from_edge)
-            
-            
-            small_box_in_ves = self.clips[self.active_labels == label][0][centre[0]-y1:centre[0]+y1,centre[1]-x1:centre[1]+x1]
+
+
+            small_box_in_ves = firstclip[0][centre[0]-y1:centre[0]+y1,centre[1]-x1:centre[1]+x1]
             print(small_box_in_ves)
             av_intens = np.average(small_box_in_ves)
             print(av_intens)
             try:
-            
-                self.intensitytrace[str(label)].append(av_intens)
-                print(self.intensitytrace[str(label)])
-            
+
+                self.firstintensitytrace[str(label)].append(av_intens)
+                print(self.firstintensitytrace[str(label)])
+
             except KeyError:
-                
-                self.intensitytrace[str(label)] = [av_intens]
-            
+
+                self.firstintensitytrace[str(label)] = [av_intens]
+
             try:
-                self.centres[str(label)].append(centre)
+                self.firstcentres[str(label)].append(centre)
             except KeyError:
-                self.centres[str(label)] = [centre]    
-        
-        
+                self.firstcentres[str(label)] = [centre]    
+
+
 
 
     def delete_vesicle(self,label_as_str):
@@ -391,15 +477,26 @@ class Analyser(object):
     
             del self.bg_sub_intensity_trace[label_as_str]
             del self.filtered_intensity_trace[label_as_str]
+            del self.bg_sub_firstintensity_trace[label_as_str]
+            del self.filtered_first_intensity_trace[label_as_str]
+            del self.second_bg_si_trace[label_as_str]
+            del self.second_bg_fsi_trace[label_as_str]
+            
+            
         elif self.intensitytrace[label_as_str] is not None:
             
             del self.intensitytrace[label_as_str]
-
+            del self.firstintensitytrace[labels_as_str]
+            
         del self.areatrace[label_as_str]
-
+        del self.firstareatrace[label_as_str]
         del self.filtered_areatrace[label_as_str]
+        del self.filtered_firstareatrace[label_as_str]
+        
         del self.centres[label_as_str]
-
+        del self.firstcentres[label_as_str]
+        
+        
         
 
         
@@ -464,15 +561,29 @@ class Analyser(object):
         
     def subtract_background(self,sigma = 5):
         
-        for key in self.intensitytrace.keys():
-            self.bg_sub_intensity_trace[key] = np.array(self.intensitytrace[key])-self.bgintens
-            self.second_bg_si_trace[key] = np.array(self.secondintensitytrace[key]) -self.bgintens
+        for key in self.firstintensitytrace.keys():
             
-            self.filtered_intensity_trace[key] = smooth(self.bg_sub_intensity_trace[key],sigma)
-            max_data = np.max(self.filtered_intensity_trace[key])
+            try:
+                self.bg_sub_intensity_trace[key] = np.array(self.intensitytrace[key])-self.bgintens
+                self.second_bg_si_trace[key] = np.array(self.secondintensitytrace[key]) -self.bgintens
+
+                self.filtered_intensity_trace[key] = smooth(self.bg_sub_intensity_trace[key],sigma)
+                max_data = np.max(self.filtered_intensity_trace[key])
+
+                self.filtered_intensity_trace[key] = self.filtered_intensity_trace[key]/max_data
+            except KeyError :
+                continue
             
-            self.filtered_intensity_trace[key] = self.filtered_intensity_trace[key]/max_data
-            print('This is the filtered data, ' ,self.filtered_intensity_trace[key])
+            self.bg_sub_firstintensity_trace[key] = np.array(self.firstintensitytrace[key])-self.bgintens
+            self.second_bg_fsi_trace[key] = np.array(self.firstsecondintensitytrace[key]) -self.bgintens
+
+            self.filtered_firstintensity_trace[key] = smooth(self.bg_sub_firstintensity_trace[key],sigma)
+            max_data = np.max(self.filtered_firstintensity_trace[key])
+
+            self.filtered_firstintensity_trace[key] = self.filtered_firstintensity_trace[key]/max_data
+            print('This is the filtered data, ' ,self.filtered_firstintensity_trace[key])
+            
+            
     def heat_data_generator(self):
 
         #first make sure heat data is array

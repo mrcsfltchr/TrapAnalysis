@@ -18,7 +18,7 @@ class SaveBox(QWidget):
 
     #pass the dictionaries to be saved
 
-    def __init__(self,labelled_traps,intensities,filtered_intensities,areas,filtered_areas,centres,t0,tmax,save_directory):
+    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,areas,firstareas,filtered_areas,centres,firstcentres,t0,tmax,save_directory):
         
         
         QWidget.__init__(self)
@@ -35,10 +35,19 @@ class SaveBox(QWidget):
         
         self.labelled_traps = labelled_traps
         self.intensities = intensities
+        self.firstintensities = firstintensities
+        
         self.fintensities = filtered_intensities
+        self.ffintensities = first_filtered_intensities
+        
         self.areas = areas
+        self.firstareas = firstareas
         self.fareas = filtered_areas
+        self.ffareas = first_filtered_areas
+        
         self.centres = centres
+        self.firstcentres = centres
+        
         self.bookends = np.array([t0,tmax])
         
         self.worker = myworker(self.go_on_and_save)
@@ -99,7 +108,13 @@ class SaveBox(QWidget):
 
         df.to_csv(self.sd + 'filtered_Intensities' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
 
+        df = pd.DataFrame.from_dict(self.firstintensities,orient = 'index').transpose().fillna('')
 
+        df.to_csv(self.sd + 'detected_at_beginning_Intensities' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
+
+        df = pd.DataFrame.from_dict(self.ffintensities,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'detected_at_beginning_filtered_Intensities' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')        
         #Save Areas
 
         df = pd.DataFrame.from_dict(self.areas,orient = 'index').transpose().fillna('')
