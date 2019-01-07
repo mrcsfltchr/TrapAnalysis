@@ -125,7 +125,13 @@ class SaveBox(QWidget):
 
         df.to_csv(self.sd + 'filtered_Areas' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
 
+        df = pd.DataFrame.from_dict(self.firstareas,orient = 'index').transpose().fillna('')
 
+        df.to_csv(self.sd + 'Detected_at_beginning_Areas' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
+
+        df = pd.DataFrame.from_dict(self.ffareas,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'Detected_at_beginning_filtered_Areas' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
 
         #Save Detected Vesicle Centres. these are serialised using pickle as do not anticipate the user wanting to use the detected centre coordinates outside of python
 
@@ -133,8 +139,9 @@ class SaveBox(QWidget):
         
 
         pickle.dump(self.centres,file,pickle.HIGHEST_PROTOCOL)
-
-
+        file = open(self.sd + 'Detected_from_beginning_Centres' +'_' + self.save_Date.text()+'_' + self.save_Time.text()+'.txt','wb')
+        pickle.dump(self.firstcentres,file,pickle.HIGHEST_PROTOCOL)
+        
         #save t0 and tmax
 
         np.savetxt(self.sd + '/bookendtimes' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv',self.bookends,delimiter = ',')
