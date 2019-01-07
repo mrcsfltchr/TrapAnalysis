@@ -324,12 +324,12 @@ class Analyser(object):
         
             try:
                 self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
-                self.filtered_areatrace[str(label)] = smooth(self.areatrace[str(label)],40)
+                self.filtered_areatrace[str(label)] = smooth(self.areatrace[str(label)],5)
                 
                 self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
                 self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
-                self.filtered_areatrace[str(label)]=smooth(self.areatrace[str(label)],40)
+                self.filtered_areatrace[str(label)]=smooth(self.areatrace[str(label)],5)
                 self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
 
 
@@ -462,7 +462,7 @@ class Analyser(object):
         self.ls = livestream(qnd,video[t0:tmax],annotations_on = annotations,annotate_coords = self.centres[str(label)])
        
         
-    def subtract_background(self,sigma = 40):
+    def subtract_background(self,sigma = 5):
         
         for key in self.intensitytrace.keys():
             self.bg_sub_intensity_trace[key] = np.array(self.intensitytrace[key])-self.bgintens
