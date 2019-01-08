@@ -424,9 +424,11 @@ class Analyser(object):
         dt = distance_transform_edt(testclip)        
 
         try:
+            #if thresholding has failed completely to find a foreground, no peak can be found. The return value assigned to 
+            #the variable 'centre' is not an array so cannot be indexed. An index error will be thrown and caught below
+            
             centre = list(peak_local_max(dt,threshold_rel = 0.6)[0])
-            print(centre)
-            print(dt[centre[0],centre[1]])
+            
             rr,cc = circle(centre[0],centre[1],int(dt[centre[0],centre[1]]),shape = dt.shape)
             img = np.zeros_like(dt)
             img[rr,cc] = firstclip[0][rr,cc]
@@ -443,12 +445,33 @@ class Analyser(object):
 
 
         except IndexError:
+            
+            #If no centre position is found, we take the last centre position found and take the intensity value from this
+            #If thresholding fails to find a foreground in the first frame, such that there is no previously recorded centre position
+            #we do not record any intensity or area values for the contents of this box in this frame.
+            
+            
+            try:
+                
+                centre = self.firstcentres[str(label)][-1]
+                self.if_threshold_fails(centre,label,firstclip)
+                
+            except KeyError or IndexError:
+                
+                centre = []
+                
+                
+            '''
             centre = []
             try:
                 self.missing_peaks[str(label)].append(counter)
             except KeyError:
                 self.missing_peaks[str(label)] = [counter]
+            '''
+            
 
+            
+            
         if len(centre) >0:
 
             print(self.firstactivelabels)
@@ -490,6 +513,22 @@ class Analyser(object):
 
 
 
+    def if_threshold_fails(self,centre,label,firstclip):
+        
+        print(int(np.sqrt(self.firstareatrace[str(label)][-1])))
+        rr,cc = circle(centre[0],centre[1],int(np.sqrt(self.firstareatrace[str(label)][-1])),shape = firstclip.shape)
+        img = np.zeros_like(firstclip[0])
+        img[rr,cc] = firstclip[0][rr,cc]
+        
+        try:
+            self.firstareatrace[str(label)].append(len(np.nonzero(img)[0]))
+            self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
+
+            self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
+        except KeyError:
+            self.firstareatrace[str(label)] = [len(np.nonzero(img)[0])]
+            self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
+            self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 
     def delete_vesicle(self,label_as_str):
     

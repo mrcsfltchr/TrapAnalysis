@@ -244,6 +244,7 @@ class AnalyserPanel(QWidget):
             self.sv.label_select.addItems(list(self.analyser.bg_sub_intensity_trace.keys()))
             
             # Add plotting data
+
             self.sv.ydataI = self.analyser.bg_sub_intensity_trace
             self.sv.ydataA = self.analyser.filtered_areatrace
             
@@ -284,7 +285,7 @@ class AnalyserPanel(QWidget):
         self.analyser.delete_vesicle(label_as_str)
 
         #if multivideo mode need to also deleted label from analyser by vid
-
+        '''
         if self.sv.multividflag:
             vid = self.sv.video_select.currentText()
             self.sv.activelabels_by_vid[vid] = self.sv.activelabels_by_vid[vid][self.sv.activelabels_by_vid[vid] != int(label_as_str)]
@@ -295,7 +296,9 @@ class AnalyserPanel(QWidget):
         else:
             self.sv.label_select.clear()
             self.sv.label_select.addItems(list(self.analyser.bg_sub_intensity_trace.keys()))
-            
+        '''
+        self.sv.label_select.clear()
+        self.sv.label_select.addItems(list(self.analyser.bg_sub_intensity_trace.keys()))
     
     def donemessage(self):
         
@@ -382,11 +385,13 @@ class AnalyserPanel(QWidget):
     
     
         #Save all relevant data, by creating a pop up window. In this window user is prompted to enter a Date and Time to identify files. It then proceeds to save files named "trap_positions_Date_Time.csv". "intensities_Date_Time.csv" etc.
-    
+        '''
         if not self.AControl.multi_pressed_flag:
             
             labelled_traps = np.hstack((self.analyser.trapgetter.labels[:,np.newaxis],self.analyser.trapgetter.trap_positions))
-
+        '''
+        labelled_traps = np.hstack((self.analyser.trapgetter.labels[:,np.newaxis],self.analyser.trapgetter.trap_positions))
+        '''
         else:
             all_traps = None
             all_labels = None
@@ -403,7 +408,9 @@ class AnalyserPanel(QWidget):
                     print(all_labels.shape)
                     
             labelled_traps = np.hstack((all_labels[:,np.newaxis],all_traps))
-            
+        '''
+        
+        
         save_directory = self.video_directory
         self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory)
     
@@ -448,7 +455,7 @@ class AnalyserPanel(QWidget):
         
     def pre_flight_check(self):
 
-        print('Value of multi flag is ', self.AControl.multi_pressed_flag)
+        
         #after we have checked in the AControl that t0 and tmax have been assigned, we also check here that the length of the video to be analysed is valid. I have presumed that a video of less than 100 frames is probably a mistake. So i warn Kareem. However, I give the user the opportunity to run analysis anyway.
         #If the length of the video is longer than this we proceed directly with the analysis.
         length = int(self.AControl.tmaxselector.currentText()) - int(self.AControl.t0selector.currentText())
@@ -461,17 +468,19 @@ class AnalyserPanel(QWidget):
             ret = self.msgbox.exec_()
         
             self.proceed_yes_or_no(ret)
-        
+        '''
         elif not self.AControl.multi_pressed_flag:
             self.run_analysis()
-            
+        '''
+        self.run_analysis()
+        '''
         else:
             print('multi run analysis function about to run')
 
 
             self.remove_empty_vid_paths()
             self.multi_run_analysis()
-            
+        ''' 
             
 
     def remove_empty_vid_paths(self):
@@ -486,12 +495,17 @@ class AnalyserPanel(QWidget):
         
         print(ret, "hi")
         if ret == QMessageBox.Ok:
+            '''
             if not self.AControl.multi_pressed_flag:
                 self.run_analysis()
+            '''
+            self.run_analysis()
+            '''
             else:
                 self.remove_empty_vid_paths()
                 self.multi_run_analysis()
-                
+            ''' 
+            
     def multi_run_analysis(self):
         self.activelabels_byvid = {}
          
