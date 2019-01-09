@@ -159,7 +159,7 @@ class SingleVesViewer(QtWidgets.QWidget):
 
         if self.multividflag:
             self.addVideoSelector(self.labels_by_vid)
-        self.show()
+
 
 
 

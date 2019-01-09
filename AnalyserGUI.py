@@ -26,6 +26,8 @@ from savebox import SaveBox,LoadBox as lb
 from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
 from BackgroundFinder import BackgroundFinder
+from readvidsfromdir import get_video_paths
+
 
 
 class MW(QtWidgets.QMainWindow):
@@ -60,8 +62,18 @@ class MW(QtWidgets.QMainWindow):
 class AnalyserPanel(QWidget):
     
     trap_on_sig = pyqtSignal()
+    close_path_input_sig = pyqtSignal()
+    
     def __init__(self,mode = 'standard'):
         QWidget.__init__(self)
+        
+        
+        #add button to trigger auto run
+        self.autorunstart = QtWidgets.QPushButton('Run Auto')
+        self.autorunstart.clicked.connect(self.autostart_pressed)
+        
+        #connect signal emitted when directorypath has been loaded into memory to function autorun
+        self.close_path_input_sig.connect(self.autorun)
         
         #add reset button
         self.purge_btn = QtWidgets.QPushButton('Reset')
@@ -145,7 +157,7 @@ class AnalyserPanel(QWidget):
         #tells computer whether to pass the reloaded t0 and tmax "bookends" or allow the user to control the t0 and tmax using the combobox. Default is False
         
         self.combo_switch_off = True
-
+            
 
         #flags
         self.trap_bool = False
@@ -156,6 +168,7 @@ class AnalyserPanel(QWidget):
         self.layout = QGridLayout()
 
         self.layout.addWidget(self.display,0,3)
+        self.layout.addWidget(self.autorunstart,4,0)
         self.layout.addWidget(self.switch_to_popup,1,4)
         self.layout.addWidget(self.loadbox,2,0)
         self.layout.addWidget(self.tc,2,1)
@@ -174,19 +187,97 @@ class AnalyserPanel(QWidget):
         ''' self.show() '''
 
 
-    
+    def autostart_pressed(self):
+        
+        self.enter_dir_path = QLineEdit('Enter directory of videos')
+        self.enter_dir_path.returnPressed.connect(self.getfilepathandclose)
+        
+        
+        self.enter_dir_path.show()
+        
+    def getfilepathandclose(self,):
+        
+        self.list_dir = self.enter_dir_path.text()
+        
+        self.enter_dir_path.close()
+        
+        del self.enter_dir_path
+        self.close_path_input_sig.emit()
+        
+    def autorun(self):
+        #first disconnect the interruptions during the analysis.
+        
+        self.AControl.t0selector.currentTextChanged.disconnect(self.AControl.override_check)
+              
+        ret, self.dir_path_list, self.save_dir_path,network_dir = get_video_paths(self.list_dir)
+
+            
+        if not ret == 0:
+            self.msgbox.setText('Analysis has found file names which are not .ome.tif files, do you want to continue?')
+            self.msgbox.exec_()
+            
+        
+        for video_path in self.dir_path_list:
+            if os.getcwd() != self.save_dir_path:
+                os.chdir(self.save_dir_path)
+            self.analyser.videopath = video_path
+            try:
+                
+                self.analyser.frames = self.analyser.load_frames()
+                self.AControl.update_frames(self.analyser.frames)
+                self.has_frames = True
+                
+            except Exception as e:
+                file = open(os.getcwd() +'errorlog.txt','w')
+                print(e)
+                #file.write(e.message +',')
+                
+                file.close()
+                continue
+            
+            os.chdir(network_dir)
+            self.get_traps()
+            
+            t0 = int(self.AControl.t0selector.currentText())
+            tmax = t0 +200
+            if tmax > self.analyser.frames.shape[0]:
+                self.AControl.tmaxselector.setCurrentText(str(self.analyser.frames.shape[0]))
+            else:
+                self.AControl.tmaxselector.setCurrentText(str(tmax))
+                
+            self.run_just_analysis()
+            
+            print(video_path)
+            self.video_directory = self.save_dir_path + '/'
+            self.auto_save_data()
+            
+            '''
+            self.myworker = QAnalyser(self)
+            self.myworker.moveToThread(self.mythread)
+            print('worked')
+            self.mythread.started.connect(self.myworker.run_just_analysis)
+            
+            self.myworker.sig1.connect(self.mythread.quit)
+            self.mythread.start()              
+            '''
+        return 0
+
     def purge(self):
 
         #reset analyser which contains the data. Reset thread as might contain data\
         self.analyser = Analyser('')
         self.mythread = QThread()
-        self.sv = None
+        del self.sv
         self.display = VideoBorder()
         self.vid_control = VideoViewerControl()
         self.loadbox.videopathlist = None
         self.layout.addWidget(self.display,0,3)
         self.layout.addWidget(self.vid_control,2,4)
-
+        del self.sb
+        self.trap_bool = False
+        self.has_frames = False
+        
+        
     
     def video_path_collection_error(self):
         
@@ -222,7 +313,7 @@ class AnalyserPanel(QWidget):
     
         if self.mode == 'directional':
             self.sv = SingleVesViewer(frames_dict,mode = 'directional')
-        
+            self.sv.show()
     
     
         #if trap positions have been found it is safe to bring up video viewer for contents of single traps.
@@ -416,8 +507,50 @@ class AnalyserPanel(QWidget):
     
         self.sb.show()
     
+    def auto_save_data(self):
+        
+        labelled_traps = np.hstack((self.analyser.trapgetter.labels[:,np.newaxis],self.analyser.trapgetter.trap_positions))
+
+        
+        save_directory = self.video_directory
+        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory,self.analyser.videopath)
+        self.sb.autosave()
+        
+        self.clean_data_stores()
+        
+        del self.sb
+        
     
-    
+    def clean_data_stores(self):
+        
+        self.analyser.intensitytrace = {}
+        self.analyser.firstintensitytrace = {}
+
+        self.analyser.secondintensitytrace = {}
+        self.analyser.firstsecondintensitytrace = {}
+
+        self.analyser.bg_sub_intensity_trace = {}
+        self.analyser.bg_sub_firstintensity_trace = {}
+
+        self.analyser.filtered_intensity_trace = {}
+        self.analyser.filtered_first_intensity_trace = {}
+
+        self.analyser.second_bg_si_trace = {}
+        self.analyser.second_bg_fsi_trace = {}
+
+        self.analyser.areatrace = {}
+        self.analyser.firstareatrace = {}
+
+        self.analyser.filtered_areatrace = {}
+        self.analyser.filtered_firstareatrace = {}
+
+        self.analyser.firstsecondareatrace = {}
+        self.analyser.secondareatrace = {}
+
+        self.analyser.areaerrors = {}
+        self.analyser.centres = {}
+        self.analyser.firstcentres = {}
+        
     def spit_save_error(self):
         if self.analyser.bg_sub_intensity_trace is None:
             self.msgbox.setText('No data to save')
@@ -553,9 +686,11 @@ class AnalyserPanel(QWidget):
 
 
             self.sv = SingleVesViewer(self.analyser.multivid_frames,self.analyser.traps_by_vid,self.analyser.labels_by_vid,self.activelabels_byvid,self.analyser.trapgetter.trapdimensions,self.mode)
+            self.sv.show()
+            
         else:
             self.sv = SingleVesViewer(self.analyser.multivid_frames,self.analyser.traps_by_vid,self.analyser.labels_by_vid,self.activelabels_byvid,self.analyser.trapgetter.trapdimensions)
-
+            self.sv.show()
         self.sv.set_centres(self.analyser.centres)
 
         self.sv.t0 = self.AControl.t0
@@ -588,6 +723,75 @@ class AnalyserPanel(QWidget):
 
         print(self.analyser.trapgetter.trap_positions)           
                 
+        
+    def run_just_analysis(self):
+        
+
+        self.analyser.sett0frame(int(self.AControl.t0selector.currentText()))
+        
+
+        self.analyser.get_clips_alt()
+        self.analyser.classify_clips()
+        self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()))
+        self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()))
+        self.analyser.subtract_background()
+    
+        print(list(self.analyser.bg_sub_intensity_trace.keys()))
+            
+        # if an instance of the Single Vesicle Viewer exists, we just want to update the allowed labels to those that have detectable vesicles. And we want to supply it with the dictionary of detected particle centres. If not we need create a new instance automatically.
+        
+        #Connect the save_data button so it does something when clicked now
+        
+            
+        if self.sv is not None:
+        
+            self.sv = None
+
+        #create a dictionary which matches the video to the labelled position of this video in the chamber. This is done so that the single video case may be handled in the same way as the multivideo case.
+            
+        frames_dict = {}
+        frames_dict['1'] = self.analyser.frames
+        
+        if self.mode == 'directional':
+
+            
+            self.sv = SingleVesViewer(frames_dict,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,list(self.analyser.bg_sub_intensity_trace.keys()),self.analyser.trapgetter.trapdimensions,mode = 'directional')
+            
+        else:
+            self.sv = SingleVesViewer(self.analyser.frames,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions)
+            
+        self.sv.set_centres(self.analyser.centres)
+
+        self.sv.t0 = self.AControl.t0
+        self.sv.tmax = self.AControl.tmax
+        
+        #add plotting_data
+        self.sv.ydataI = self.analyser.bg_sub_intensity_trace
+        self.sv.ydataA = self.analyser.filtered_areatrace
+        
+        print(self.sv.ydataI)
+        print(self.sv.ydataA)
+
+        
+        #add data for comparison, determined by a separate method.
+        
+        
+        self.sv.compare_ydataI = self.analyser.second_bg_si_trace
+        self.sv.compare_ydataA = self.analyser.secondareatrace
+        
+
+        
+        
+        
+        #Add connections to heat plot generator from buttons in the single vesicle viewer
+        self.sv.delete.clicked.connect(self.delete_vesicle_and)
+        self.sv.interact_display.accepted.connect(self.get_heat_plot)
+        self.sv.save_heat.clicked.connect(self.prepare_heat_data4save)
+        #Add connection to directional heat_plot_gen
+        
+        
+        self.sv.proceed_to_directional_query.accepted.connect(self.create_persisting_times)
+        print('analysis Done')
     def run_analysis(self):
     
         # run analysis
@@ -601,69 +805,10 @@ class AnalyserPanel(QWidget):
 
                                 
         if self.analyser.trapgetter.trap_positions is not None:
-            self.analyser.sett0frame(int(self.AControl.t0selector.currentText()))
             
-
-            self.analyser.get_clips_alt()
-            self.analyser.classify_clips()
-            self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()))
-            self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()))
-            self.analyser.subtract_background()
-        
-            print(list(self.analyser.bg_sub_intensity_trace.keys()))
-                
-            # if an instance of the Single Vesicle Viewer exists, we just want to update the allowed labels to those that have detectable vesicles. And we want to supply it with the dictionary of detected particle centres. If not we need create a new instance automatically.
-            
-            #Connect the save_data button so it does something when clicked now
+            self.run_just_analysis()
             self.save_data_btn.clicked.connect(self.save_data)
-            if self.sv is not None:
-            
-                self.sv = None
-
-            #create a dictionary which matches the video to the labelled position of this video in the chamber. This is done so that the single video case may be handled in the same way as the multivideo case.
-                
-            frames_dict = {}
-            frames_dict['1'] = self.analyser.frames
-            
-            if self.mode == 'directional':
-
-                
-                self.sv = SingleVesViewer(frames_dict,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,list(self.analyser.bg_sub_intensity_trace.keys()),self.analyser.trapgetter.trapdimensions,mode = 'directional')
-            else:
-                self.sv = SingleVesViewer(self.analyser.frames,self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels,self.analyser.trapgetter.trapdimensions)
-            self.sv.set_centres(self.analyser.centres)
-
-            self.sv.t0 = self.AControl.t0
-            self.sv.tmax = self.AControl.tmax
-            
-            #add plotting_data
-            self.sv.ydataI = self.analyser.bg_sub_intensity_trace
-            self.sv.ydataA = self.analyser.filtered_areatrace
-            
-            print(self.sv.ydataI)
-            print(self.sv.ydataA)
-
-            
-            #add data for comparison, determined by a separate method.
-            
-            
-            self.sv.compare_ydataI = self.analyser.second_bg_si_trace
-            self.sv.compare_ydataA = self.analyser.secondareatrace
-            
-
-            
-            
-            
-            #Add connections to heat plot generator from buttons in the single vesicle viewer
-            self.sv.delete.clicked.connect(self.delete_vesicle_and)
-            self.sv.interact_display.accepted.connect(self.get_heat_plot)
-            self.sv.save_heat.clicked.connect(self.prepare_heat_data4save)
-            #Add connection to directional heat_plot_gen
-            
-            
-            self.sv.proceed_to_directional_query.accepted.connect(self.create_persisting_times)
-
-
+            self.sv.show()
             print(self.analyser.trapgetter.trap_positions)
         else:
             self.msgbox.setText('Make sure video has been loaded and trap positions have been found. Press "Get Traps" ')
@@ -709,8 +854,11 @@ class AnalyserPanel(QWidget):
         self.bgf.find_correct_gaussian_scale()
 
         self.AControl.has_been_overriden = True
-        
+        print(self.bgf.peak_max_arg)
+        t0 = self.bgf.peak_max_arg
         self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
+        print(self.AControl.t0selector.currentText())
+        self.AControl.update()
         self.AControl.override_warning.rejected.connect(self.no_manual_override)
         
         
@@ -730,7 +878,7 @@ class AnalyserPanel(QWidget):
             except:
                 self.msgbox.setText('Getting traps failed. Check Kernel, and that the visibility of the traps in the\n last frame is good')
                 self.msgbox.show()
-
+        return t0
             
 
     def create_persisting_times(self):
@@ -841,7 +989,10 @@ class QAnalyser(QtCore.QObject):
         self.analyser.frames = self.analyser.load_frames()
         self.sig1.emit()
 
-
+    def run_just_analysis(self):
+        
+        self.analyser.run_just_analysis()
+        self.sig1.emit()
 
 class LoadBox(QtWidgets.QWidget):
     

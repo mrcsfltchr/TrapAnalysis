@@ -17,18 +17,23 @@ import pickle
 class SaveBox(QWidget):
 
     #pass the dictionaries to be saved
-
-    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,first_filtered_intensities,areas,firstareas,filtered_areas,first_filtered_areas,centres,firstcentres,t0,tmax,save_directory):
+    auto_sig = pyqtSignal()
+    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,first_filtered_intensities,areas,firstareas,filtered_areas,first_filtered_areas,centres,firstcentres,t0,tmax,save_directory,vid_id, auto = False):
         
         
         QWidget.__init__(self)
         #Create thread for saving
         
         self.save_thread = QtCore.QThread()
-        
+        self.auto_save_thread = QtCore.QThread()
         #save directory to save files to
         
         self.sd = save_directory
+        
+        #when autosaving we save the files with an id which matches it to the video file which was analysed to produce the data
+        
+        self.vid_id = None
+        
         #include warning box for errors
         self.warning_box = QtWidgets.QMessageBox()
 
@@ -51,11 +56,16 @@ class SaveBox(QWidget):
         self.bookends = np.array([t0,tmax])
         
         self.worker = myworker(self.go_on_and_save)
+        self.autoworker = myworker(self.autosave)
         
         self.save_thread.started.connect(self.worker.run)
+        self.auto_save_thread.started.connect(self.autoworker.run)
         
         self.worker.sig1.connect(self.save_thread.exit)
         self.worker.sig1.connect(self.close)
+        self.autoworker.sig1.connect(self.auto_save_thread.exit)
+        self.autoworker.sig1.connect(self.close)
+        
         
         #in order to save as csv file we must make all the numpy arrays the same length
         self.save_Date = QtWidgets.QLineEdit('Enter Date, NOT WITH "/"! ')
@@ -83,6 +93,18 @@ class SaveBox(QWidget):
 
         self.save_btn.clicked.connect(self.start_thread)
 
+        self.auto_sig.connect(self.start_auto_thread)
+        
+        self.vid_id = vid_id
+        
+        if auto:
+            
+            self.auto_sig.emit()
+            
+        
+    def start_auto_thread(self):
+        self.auto_save_thread.start()
+        
     
     def start_thread(self):
     
@@ -150,8 +172,65 @@ class SaveBox(QWidget):
 
 
 
+    def autosave(self):
+        
+        vid_id = self.vid_id
+        np.savetxt(self.sd + 'trap_positions' + '_' + vid_id+ '.csv',self.labelled_traps,delimiter = ',')
+
+        
+
+        #Save intensity traces
 
 
+        df = pd.DataFrame.from_dict(self.intensities,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'Intensities' + vid_id+ '.csv')
+
+        df = pd.DataFrame.from_dict(self.fintensities,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'filtered_Intensities' + vid_id+ '.csv')
+
+        df = pd.DataFrame.from_dict(self.firstintensities,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'detected_at_beginning_Intensities' + vid_id+ '.csv')
+
+        df = pd.DataFrame.from_dict(self.ffintensities,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'detected_at_beginning_filtered_Intensities' + '_' + vid_id+ '.csv')        
+        #Save Areas
+
+        df = pd.DataFrame.from_dict(self.areas,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'Areas' + vid_id+ '.csv')
+
+        df = pd.DataFrame.from_dict(self.fareas,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'filtered_Areas' + vid_id + '.csv')
+
+        df = pd.DataFrame.from_dict(self.firstareas,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'Detected_at_beginning_Areas' +vid_id+ '.csv')
+
+        df = pd.DataFrame.from_dict(self.ffareas,orient = 'index').transpose().fillna('')
+
+        df.to_csv(self.sd + 'Detected_at_beginning_filtered_Areas' +vid_id+ '.csv')
+
+        #Save Detected Vesicle Centres. these are serialised using pickle as do not anticipate the user wanting to use the detected centre coordinates outside of python
+
+        file = open(self.sd + 'Centres' + vid_id + '.txt','wb')
+        
+
+        pickle.dump(self.centres,file,pickle.HIGHEST_PROTOCOL)
+        file = open(self.sd + 'Detected_from_beginning_Centres' +vid_id+'.txt','wb')
+        pickle.dump(self.firstcentres,file,pickle.HIGHEST_PROTOCOL)
+
+        #save t0 and tmax
+
+        np.savetxt(self.sd + '/bookendtimes' + vid_id + '.csv',self.bookends,delimiter = ',')
+
+
+
+    
 
 class LoadBox(QWidget):
 
