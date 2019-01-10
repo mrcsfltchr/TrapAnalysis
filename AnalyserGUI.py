@@ -27,7 +27,8 @@ from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
 from BackgroundFinder import BackgroundFinder
 from readvidsfromdir import get_video_paths
-import objgraph
+
+
 
 
 
@@ -217,8 +218,10 @@ class AnalyserPanel(QWidget):
             self.msgbox.setText('Analysis has found file names which are not .ome.tif files, do you want to continue?')
             self.msgbox.exec_()
             
-        
+        counter = 0
         for video_path in self.dir_path_list:
+            counter +=1
+            print(video_path)
             if os.getcwd() != self.save_dir_path:
                 os.chdir(self.save_dir_path)
             self.analyser.videopath = video_path
@@ -524,9 +527,9 @@ class AnalyserPanel(QWidget):
         self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory,self.analyser.videopath)
         self.sb.autosave()
         
-        self.clean_data_stores()
+        '''self.clean_data_stores()'''
         
-        '''print(objgraph.show_refs(self))'''
+        '
         del self.sb
         
     
