@@ -247,7 +247,7 @@ class AnalyserPanel(QWidget):
             self.get_traps()
             
             t0 = int(self.AControl.t0selector.currentText())
-            tmax = t0 +2
+            tmax = t0 +1200
             if tmax > self.analyser.frames.shape[0]:
                 self.AControl.tmaxselector.setCurrentText(str(self.analyser.frames.shape[0]))
             else:
