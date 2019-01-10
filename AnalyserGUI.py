@@ -529,7 +529,7 @@ class AnalyserPanel(QWidget):
         
         '''self.clean_data_stores()'''
         
-        '
+        
         del self.sb
         
     
