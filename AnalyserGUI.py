@@ -211,7 +211,7 @@ class AnalyserPanel(QWidget):
         
         self.AControl.t0selector.currentTextChanged.disconnect(self.AControl.override_check)
               
-        ret, self.dir_path_list, self.save_dir_path,network_dir = get_video_paths(self.list_dir)
+        ret, self.dir_path_list, self.save_dir_path,self.network_dir = get_video_paths(self.list_dir)
 
             
         if not ret == 0:
@@ -243,7 +243,7 @@ class AnalyserPanel(QWidget):
             else:
                 continue
             
-            os.chdir(network_dir)
+            os.chdir(self.network_dir)
             self.get_traps()
             
             t0 = int(self.AControl.t0selector.currentText())
@@ -277,6 +277,9 @@ class AnalyserPanel(QWidget):
     def purge(self):
 
         #reset analyser which contains the data. Reset thread as might contain data\
+        
+        os.chdir(self.network_dir)
+        
         self.analyser = Analyser('')
         self.mythread = QThread()
         del self.sv
@@ -528,7 +531,7 @@ class AnalyserPanel(QWidget):
         self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory,self.analyser.videopath)
         self.sb.autosave()
         
-        '''self.clean_data_stores()'''
+        self.clean_data_stores()
         
         
         del self.sb
