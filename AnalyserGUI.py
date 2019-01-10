@@ -532,8 +532,8 @@ class AnalyserPanel(QWidget):
         self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory,self.analyser.videopath)
         self.sb.autosave()
                 
-        del self.sb
-        del self.sv
+        self.sb = None
+        self.sv = None
         
         self.clean_data_stores()
         
