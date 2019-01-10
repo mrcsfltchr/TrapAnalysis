@@ -201,9 +201,9 @@ class AnalyserPanel(QWidget):
         
         self.list_dir = self.enter_dir_path.text()
         
-        self.enter_dir_path.close()
         
-        del self.enter_dir_path
+        print(' I made it to after closing')
+        #del self.enter_dir_path
         self.close_path_input_sig.emit()
         
     def autorun(self):
@@ -227,6 +227,7 @@ class AnalyserPanel(QWidget):
             self.analyser.videopath = video_path
             if isTiff(video_path) == 0:
                 try:
+                    print('made it here')
                     self.analyser.frames = self.analyser.load_frames()
                     print("haven't raised exception yet")
                     self.AControl.update_frames(self.analyser.frames)
@@ -246,7 +247,7 @@ class AnalyserPanel(QWidget):
             self.get_traps()
             
             t0 = int(self.AControl.t0selector.currentText())
-            tmax = t0 +200
+            tmax = t0 +2
             if tmax > self.analyser.frames.shape[0]:
                 self.AControl.tmaxselector.setCurrentText(str(self.analyser.frames.shape[0]))
             else:
