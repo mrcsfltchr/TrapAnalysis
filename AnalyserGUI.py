@@ -27,6 +27,7 @@ from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
 from BackgroundFinder import BackgroundFinder
 from readvidsfromdir import get_video_paths
+import objgraph
 
 
 
@@ -221,18 +222,21 @@ class AnalyserPanel(QWidget):
             if os.getcwd() != self.save_dir_path:
                 os.chdir(self.save_dir_path)
             self.analyser.videopath = video_path
-            try:
-                
-                self.analyser.frames = self.analyser.load_frames()
-                self.AControl.update_frames(self.analyser.frames)
-                self.has_frames = True
-                
-            except Exception as e:
-                file = open(os.getcwd() +'errorlog.txt','w')
-                print(e)
-                #file.write(e.message +',')
-                
-                file.close()
+            if isTiff(video_path) == 0:
+                try:
+                    self.analyser.frames = self.analyser.load_frames()
+                    print("haven't raised exception yet")
+                    self.AControl.update_frames(self.analyser.frames)
+                    self.has_frames = True
+                    
+                except Exception as e:
+                    '''file = open(os.getcwd() +'errorlog.txt','w')'''
+                    print(e,'Hi i caught this exception')
+                    '''file.write(str(e) +',')
+                    '''
+                    '''file.close()'''
+                    continue
+            else:
                 continue
             
             os.chdir(network_dir)
@@ -249,7 +253,10 @@ class AnalyserPanel(QWidget):
             
             print(video_path)
             self.video_directory = self.save_dir_path + '/'
+            print("haven't crashed yet")
             self.auto_save_data()
+            
+            
             
             '''
             self.myworker = QAnalyser(self)
@@ -262,6 +269,7 @@ class AnalyserPanel(QWidget):
             '''
         return 0
 
+    
     def purge(self):
 
         #reset analyser which contains the data. Reset thread as might contain data\
@@ -518,6 +526,7 @@ class AnalyserPanel(QWidget):
         
         self.clean_data_stores()
         
+        '''print(objgraph.show_refs(self))'''
         del self.sb
         
     
@@ -550,6 +559,9 @@ class AnalyserPanel(QWidget):
         self.analyser.areaerrors = {}
         self.analyser.centres = {}
         self.analyser.firstcentres = {}
+        
+        print('cleaned')
+        
         
     def spit_save_error(self):
         if self.analyser.bg_sub_intensity_trace is None:
@@ -1217,8 +1229,18 @@ class MsgBox(QtWidgets.QMessageBox):
                                 
         
                                 
-
-
+#function to determine whether file path is likely a tiff
+        
+def isTiff(path):
+    
+    ret = -1
+    
+    if path[-8:] == '.ome.tif' or path[-10:] == '.ome-1.tif':
+        ret = 0
+        
+     
+    return ret
+        
             
 if __name__ == '__main__':
     

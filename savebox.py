@@ -18,7 +18,7 @@ class SaveBox(QWidget):
 
     #pass the dictionaries to be saved
     auto_sig = pyqtSignal()
-    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,first_filtered_intensities,areas,firstareas,filtered_areas,first_filtered_areas,centres,firstcentres,t0,tmax,save_directory,vid_id, auto = False):
+    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,first_filtered_intensities,areas,firstareas,filtered_areas,first_filtered_areas,centres,firstcentres,t0,tmax,save_directory,vid_id= None, auto = False):
         
         
         QWidget.__init__(self)
