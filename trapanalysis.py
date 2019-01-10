@@ -82,6 +82,7 @@ class TrapGetter(object):
         
         
     def remove_duplicates(self):
+        self.duplicates = np.array([])
         self.distances = np.linalg.norm(self.trap_positions - self.trap_positions[:,np.newaxis],axis = 2)
         self.sorted_distances = np.argsort(self.distances,axis = 1)
         
