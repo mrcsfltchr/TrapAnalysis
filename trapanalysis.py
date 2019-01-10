@@ -59,7 +59,7 @@ class TrapGetter(object):
         peaks = peak_local_max(distance_map,threshold_abs=3,min_distance=4)
     
         self.trap_positions = np.array(peaks)
-   
+        print('These are initial trap estimates', self.trap_positions)
         
     
     def get_trap_positions(self,frame):

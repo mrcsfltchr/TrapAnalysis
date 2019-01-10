@@ -229,7 +229,8 @@ class AnalyserPanel(QWidget):
                 try:
                     print('made it here')
                     self.analyser.frames = self.analyser.load_frames()
-                    print("haven't raised exception yet")
+                    print('frame deposit length ',self.analyser.frames.shape[0])
+                    
                     self.AControl.update_frames(self.analyser.frames)
                     self.has_frames = True
                     
@@ -567,6 +568,10 @@ class AnalyserPanel(QWidget):
         self.analyser.centres = {}
         self.analyser.firstcentres = {}
         
+        self.AControl.t0selector.clear()
+        self.AControl.tmaxselector.clear()
+        
+        
         print('cleaned')
         
         
@@ -748,7 +753,8 @@ class AnalyserPanel(QWidget):
 
         self.analyser.sett0frame(int(self.AControl.t0selector.currentText()))
         
-
+        print(self.analyser.t0frameNo)
+        
         self.analyser.get_clips_alt()
         self.analyser.classify_clips()
         self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()))

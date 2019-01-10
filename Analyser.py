@@ -210,10 +210,12 @@ class Analyser(object):
 
         self.clips -= np.min(self.clips)
 
+        
         self.clips = self.clips/np.max(self.clips)
 
         self.class_labels = self.classifier.predict(self.clips[:,:30,:30,np.newaxis],batch_size = self.clips.shape[0])
 
+        
         self.class_labels = self.class_labels.reshape(self.class_labels.shape[0],)
         print("class labels length, ",len(self.class_labels))
 
