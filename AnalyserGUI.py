@@ -74,6 +74,8 @@ class AnalyserPanel(QWidget):
         self.autorunstart = QtWidgets.QPushButton('Run Auto')
         self.autorunstart.clicked.connect(self.autostart_pressed)
         
+        #add a default value for the offset applied to the automatically found t = 0 frame.
+        self.start_offset = 0
         #connect signal emitted when directorypath has been loaded into memory to function autorun
         self.close_path_input_sig.connect(self.autorun)
         
