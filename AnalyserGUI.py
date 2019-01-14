@@ -191,18 +191,26 @@ class AnalyserPanel(QWidget):
 
     def autostart_pressed(self):
         
-        self.enter_dir_path = QLineEdit('Enter directory of videos')
-        self.enter_dir_path.returnPressed.connect(self.getfilepathandclose)
+        self.autolaunch = Autorunlaunch()
         
+        self.autolaunch.enter_dir_path.returnPressed.connect(self.getfilepathandclose)
         
-        self.enter_dir_path.show()
+        self.autolaunch.start_offset.currentTextChanged.connect(self.update_start_offset)
+        self.autolaunch.start_offset.setCurrentText('0')
+        
+        self.autolaunch.show()
+      
+    def update_start_offset(self):
+        
+        self.start_offset = int(self.autolaunch.start_offset.currentText())
+        
         
     def getfilepathandclose(self,):
         
-        self.list_dir = self.enter_dir_path.text()
+        self.list_dir = self.autolaunch.enter_dir_path.text()
         
         
-        print(' I made it to after closing')
+        
         #del self.enter_dir_path
         self.close_path_input_sig.emit()
         
@@ -247,7 +255,9 @@ class AnalyserPanel(QWidget):
             os.chdir(self.network_dir)
             self.get_traps()
             
-            t0 = int(self.AControl.t0selector.currentText())
+            t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
+            self.AControl.t0selector.setCurrentText(str(self.start_offset))
+            
             tmax = t0 +1200
             if tmax > self.analyser.frames.shape[0]:
                 self.AControl.tmaxselector.setCurrentText(str(self.analyser.frames.shape[0]))
@@ -1243,6 +1253,31 @@ class MsgBox(QtWidgets.QMessageBox):
         self.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         self.setDefaultButton(QMessageBox.Ok)
                                 
+        
+        
+class Autorunlaunch(QWidget):
+    
+    def __init__(self):
+        
+        
+        self.enter_dir_path = QLineEdit('Enter directory of videos to analyse')
+        
+        self.start_offset = QComboBox()
+        
+        items = np.arange(40).astype(str)
+        self.start_offset.addItems(items)
+        self.start_offset.setCurrentText('0')
+        
+        
+        layout = QtWidgets.QHBoxLayout()
+        
+        layout.addWidget(self.enter_dir_path)
+        layout.addWidget(self.start_offset)
+        
+        self.setLayout(layout)
+        
+        
+        
         
                                 
 #function to determine whether file path is likely a tiff
