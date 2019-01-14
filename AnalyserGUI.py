@@ -1258,7 +1258,7 @@ class MsgBox(QtWidgets.QMessageBox):
 class Autorunlaunch(QWidget):
     
     def __init__(self):
-        
+	super().__init__(self)        
         
         self.enter_dir_path = QLineEdit('Enter directory of videos to analyse')
         
