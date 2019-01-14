@@ -256,7 +256,7 @@ class AnalyserPanel(QWidget):
             self.get_traps()
             
             t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
-            self.AControl.t0selector.setCurrentText(str(self.start_offset))
+            self.AControl.t0selector.setCurrentText(str(t0))
             
             tmax = t0 +1200
             if tmax > self.analyser.frames.shape[0]:
@@ -1258,7 +1258,7 @@ class MsgBox(QtWidgets.QMessageBox):
 class Autorunlaunch(QWidget):
     
     def __init__(self):
-	super().__init__(self)        
+        QWidget.__init__(self)      
         
         self.enter_dir_path = QLineEdit('Enter directory of videos to analyse')
         
