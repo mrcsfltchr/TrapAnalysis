@@ -902,7 +902,16 @@ class AnalyserPanel(QWidget):
             t0 = self.bgf.peak_max_arg
             
             self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
+            file = open('/Users/MarcusF/Desktop/TrapAnalysis/Experimentalflowrates.csv','w')
 
+            flow_rate = np.average(self.bgf.gradient[int(self.bgf.peak_begin_frame):int(2*self.bgf.peak_max_arg - self.peak_begin_frame)])
+            
+            
+
+            file.write(self.analyser.videopath + str(flow_rate)+',')
+            
+
+            file.close()
         self.AControl.update()
         self.AControl.override_warning.rejected.connect(self.no_manual_override)
         
