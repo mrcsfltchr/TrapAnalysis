@@ -897,7 +897,7 @@ class AnalyserPanel(QWidget):
         if self.autolaunch.overridet0flag:
             t0 = int(self.autolaunch.t0selector.currentText())
             self.AControl.t0selector.setCurrentText(str(t0))
-            
+        
         else:
             t0 = self.bgf.peak_max_arg
             
@@ -921,7 +921,8 @@ class AnalyserPanel(QWidget):
                 if multividflag:
                     traps, labels = self.analyser.get_traps(0)
                 else:
-                    traps,labels = self.analyser.get_traps(int(self.bgf.peak_begin_frame))
+
+                    traps,labels = self.analyser.get_traps(t0)
                 
                 #Once traps have been successfully found, make them available for display on video view
                 
