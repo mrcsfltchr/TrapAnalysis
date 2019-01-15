@@ -19,7 +19,9 @@ class BackgroundFinder(object):
         if self.background_intens is None:
             return -1
         
-        self.gradient = np.gradient(self.background_intens)
+        normalised_gradient = self.background_intens/np.max(self.background_intens[:-20])
+        
+        self.gradient = np.gradient(normalised_gradient)
         
         
     def plot_gradient(self):
