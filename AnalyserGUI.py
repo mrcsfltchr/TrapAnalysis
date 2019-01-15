@@ -893,7 +893,7 @@ class AnalyserPanel(QWidget):
         self.bgf.find_correct_gaussian_scale()
 
         self.AControl.has_been_overriden = True
-        print(self.bgf.peak_max_arg)
+        
         if self.autolaunch.overridet0flag:
             t0 = int(self.autolaunch.t0selector.currentText())
             self.AControl.t0selector.setCurrentText(str(t0))
