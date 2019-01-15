@@ -74,10 +74,12 @@ class AnalyserPanel(QWidget):
         self.autorunstart = QtWidgets.QPushButton('Run Auto')
         self.autorunstart.clicked.connect(self.autostart_pressed)
         
+        self.firstvideoflag = True
+        
         #add a default value for the offset applied to the automatically found t = 0 frame.
         self.start_offset = 0
         #connect signal emitted when directorypath has been loaded into memory to function autorun
-        self.close_path_input_sig.connect(self.autorun)
+        self.close_path_input_sig.connect(self.autorun_gettraps)
         
         #add reset button
         self.purge_btn = QtWidgets.QPushButton('Reset')
@@ -200,6 +202,7 @@ class AnalyserPanel(QWidget):
         self.autolaunch.start_offset.currentTextChanged.connect(self.update_start_offset)
         self.autolaunch.start_offset.setCurrentText('0')
         
+        
         self.autolaunch.show()
       
     def update_start_offset(self):
@@ -216,19 +219,21 @@ class AnalyserPanel(QWidget):
         #del self.enter_dir_path
         self.close_path_input_sig.emit()
         
-    def autorun(self):
+    def autorun_gettraps(self):
         #first disconnect the interruptions during the analysis.
         
         self.AControl.t0selector.currentTextChanged.disconnect(self.AControl.override_check)
               
         ret, self.dir_path_list, self.save_dir_path,self.network_dir = get_video_paths(self.list_dir)
 
+        
             
         if not ret == 0:
             self.msgbox.setText('Analysis has found file names which are not .ome.tif files, do you want to continue?')
             self.msgbox.exec_()
             
         counter = 0
+        
         for video_path in self.dir_path_list:
             counter +=1
             print(video_path)
@@ -257,6 +262,9 @@ class AnalyserPanel(QWidget):
             os.chdir(self.network_dir)
             self.get_traps()
             
+
+                        
+                
             t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
             self.AControl.t0selector.setCurrentText(str(t0))
             
@@ -268,23 +276,14 @@ class AnalyserPanel(QWidget):
                 
             self.run_just_analysis()
             
-            print(video_path)
+            
             self.video_directory = self.save_dir_path + '/'
-            print("haven't crashed yet")
+
             self.auto_save_data()
+                
             
             
-            
-            '''
-            self.myworker = QAnalyser(self)
-            self.myworker.moveToThread(self.mythread)
-            print('worked')
-            self.mythread.started.connect(self.myworker.run_just_analysis)
-            
-            self.myworker.sig1.connect(self.mythread.quit)
-            self.mythread.start()              
-            '''
-        return 0
+
 
     
     def purge(self):
@@ -895,9 +894,15 @@ class AnalyserPanel(QWidget):
 
         self.AControl.has_been_overriden = True
         print(self.bgf.peak_max_arg)
-        t0 = self.bgf.peak_max_arg
-        self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
-        print(self.AControl.t0selector.currentText())
+        if self.autolaunch.overridet0flag:
+            t0 = int(self.autolaunch.t0selector.currentText())
+            self.AControl.t0selector.setCurrentText(str(t0))
+            
+        else:
+            t0 = self.bgf.peak_max_arg
+            
+            self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
+
         self.AControl.update()
         self.AControl.override_warning.rejected.connect(self.no_manual_override)
         
@@ -1265,19 +1270,46 @@ class Autorunlaunch(QWidget):
         self.enter_dir_path = QLineEdit('Enter directory of videos to analyse')
         
         self.start_offset = QComboBox()
+        self.overridet0btn = QPushButton('Override t0 frame')
+        self.overridet0label = QLabel('Off')
+        
+        self.t0selector = QComboBox()
+        items = np.arange(800).astype(str)
+        self.t0selector.addItems(items)
+        
+        self.overridet0flag = False
+        
         
         items = np.arange(40).astype(str)
         self.start_offset.addItems(items)
         self.start_offset.setCurrentText('0')
         
         
+        self.overridet0btn.clicked.connect(self.pushthebutton)
+        
+        
         layout = QtWidgets.QHBoxLayout()
+        
         
         layout.addWidget(self.enter_dir_path)
         layout.addWidget(self.start_offset)
+        layout.addWidget(self.overridet0btn)
+        layout.addWidget(self.overridet0label)
+        layout.addWidget(self.t0selector)
         
         self.setLayout(layout)
         
+    def pushthebutton(self):
+        
+        if self.overridet0flag:
+            self.overridet0flag = False
+            self.overridet0flag.setText('Off')
+            
+        else:
+            self.overridet0flag = True
+            self.overridet0label.setText('On')
+            
+            
         
         
         
