@@ -141,6 +141,9 @@ class AnalyserPanel(QWidget):
         self.svvbtn.clicked.connect(self.generate_single_vesicle_viewer)
         
         
+        #This appears to the user of the auto run button is pressed
+        self.autolaunch = Autorunlaunch()
+        self.autolaunch.overridet0flag = False
         #initialize single particle viewer as None for purpose of running code that is conditional on the single particle viewers instantiation. i.e if it is not equal to None do something
         
         self.sv = None
@@ -195,7 +198,7 @@ class AnalyserPanel(QWidget):
 
     def autostart_pressed(self):
         
-        self.autolaunch = Autorunlaunch()
+        
         
         self.autolaunch.enter_dir_path.returnPressed.connect(self.getfilepathandclose)
         
@@ -904,7 +907,7 @@ class AnalyserPanel(QWidget):
             self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
             file = open('/Users/MarcusF/Desktop/TrapAnalysis/Experimentalflowrates.csv','w')
 
-            flow_rate = np.average(self.bgf.gradient[int(self.bgf.peak_begin_frame):int(2*self.bgf.peak_max_arg - self.peak_begin_frame)])
+            flow_rate = np.average(self.bgf.gradient[int(self.bgf.peak_begin_frame):int(2*self.bgf.peak_max_arg - self.bgf.peak_begin_frame)])
             
             
 

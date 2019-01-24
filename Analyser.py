@@ -106,16 +106,33 @@ class Analyser(object):
 
 
 
-    def get_traps(self,drug_start_frame):
-        #for now assumes that the traps are visible in last frame of video. Could also add feature for user
-        #selection but that will limit the speed of automated analysis
+    def get_traps(self,drug_start_frame, alternateframe = None,alternateframe_index = None, threshold = None):
+        
+
+        #drug_start_frame is the index of the frame in which drug arrives. If an alternateframe is supplied, the index of it must also be supplied. This is compared to the drug_start_frame index. If it is larger we then don't determine a new threshold to binarise the alternate frame as we assume drug has arrived. When drug has arrived otsu's thresholding will fail.
+        if self.frames is not None and alternateframe is None:
+                self.vframe = self.frames[drug_start_frame]
         '''
         self.visibletrapframe = self.frames[-1]
 
         self.trapgetter.get_trap_positions(self.visibletrapframe)
         '''
-        self.vframe = self.frames[drug_start_frame]
-        self.trapgetter.get_vesicle_positions(self.vframe)
+
+        
+        if alternateframe is not None and alternateframe_index is not None:
+            if alternateframe_index > drug_start_frame:
+                self.trapgetter.get_vesicle_positions(alternateframe,True)
+            else:
+                self.trapgetter.get_vesicle_positions(alternateframe)
+           
+        elif alternateframe is not None and threshold is not None:
+            self.trapgetter.get_vesicle_positions(alternateframe,threshold = threshold)
+        else:   
+            
+            
+            
+            self.trapgetter.get_vesicle_positions(self.vframe)
+            
         traps,labels = self.trapgetter.remove_duplicates()
 
         return traps,labels
