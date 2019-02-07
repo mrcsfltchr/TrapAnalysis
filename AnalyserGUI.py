@@ -902,7 +902,7 @@ class AnalyserPanel(QWidget):
             t0 = self.bgf.peak_max_arg
             
             self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
-            file = open('/Users/MarcusF/Desktop/TrapAnalysis/Experimentalflowrates.csv','w')
+            file = open(os.getcwd() +'/Experimentalflowrates.csv','w')
 
             flow_rate = np.average(self.bgf.gradient[int(self.bgf.peak_begin_frame):int(2*self.bgf.peak_max_arg - self.peak_begin_frame)])
             
