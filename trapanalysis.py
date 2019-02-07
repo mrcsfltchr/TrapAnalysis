@@ -60,11 +60,13 @@ class TrapGetter(object):
         mask = np.zeros_like(frame)
         mask[frame > self.threshold] = 1
         
-        plt.imshow(mask,cmap = 'gray')
-        plt.show()
+
         distance_map = distance_transform_edt(mask)
-        peaks = peak_local_max(distance_map,threshold_abs=3,min_distance=4)
+        
+
+        peaks = peak_local_max(distance_map,threshold_abs=5,min_distance=4)
     
+        
         self.trap_positions = np.array(peaks)
         
         
@@ -89,8 +91,14 @@ class TrapGetter(object):
         
         
     def remove_duplicates(self):
+        if self.trap_positions.shape[0] == 0:
+            print('No vesicles found')
+            
+            return self.trap_positions, np.array([])
+        
         self.duplicates = np.array([])
         self.distances = np.linalg.norm(self.trap_positions - self.trap_positions[:,np.newaxis],axis = 2)
+       
         self.sorted_distances = np.argsort(self.distances,axis = 1)
         
         for row in np.arange(self.sorted_distances.shape[0]):

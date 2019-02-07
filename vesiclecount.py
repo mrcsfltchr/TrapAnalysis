@@ -13,8 +13,8 @@ A = Analyser(None)
 
 Num_frames = tif.imagej_metadata['frames']
 
-Num_frames = 345
-print(Num_frames)
+Num_frames = 800
+
 
 drug_start_frame = 337
 
@@ -29,7 +29,7 @@ for num in range(drug_start_frame,Num_frames):
     
 
     threshold = np.average(frame) + np.std(frame)
-    print(threshold)
+    
     vesicleNo, labels = A.get_traps(drug_start_frame,alternateframe = frame,threshold = threshold)
         
     vesiclecount.append(vesicleNo.shape[0])
