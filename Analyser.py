@@ -17,7 +17,7 @@ from BackgroundFinder import BackgroundFinder
 from HeatPlotGenerator import HeatPlotGenerator
 import sys
 from scipy.ndimage import gaussian_filter1d as smooth
-
+from cv2 import warpAffine, getRotationMatrix2D, boundingRect
 
 class Analyser(object):
 
@@ -106,18 +106,36 @@ class Analyser(object):
 
 
 
-    def get_traps(self,drug_start_frame):
-        #for now assumes that the traps are visible in last frame of video. Could also add feature for user
-        #selection but that will limit the speed of automated analysis
+    def get_traps(self,drug_start_frame, alternateframe = None,alternateframe_index = None, threshold = None):
+        
+
+        #drug_start_frame is the index of the frame in which drug arrives. If an alternateframe is supplied, the index of it must also be supplied. This is compared to the drug_start_frame index. If it is larger we then don't determine a new threshold to binarise the alternate frame as we assume drug has arrived. When drug has arrived otsu's thresholding will fail.
+        if self.frames is not None and alternateframe is None:
+                self.vframe = self.frames[drug_start_frame]
         '''
         self.visibletrapframe = self.frames[-1]
 
         self.trapgetter.get_trap_positions(self.visibletrapframe)
         '''
-        self.vframe = self.frames[drug_start_frame]
-        self.trapgetter.get_vesicle_positions(self.vframe)
+
+        
+        if alternateframe is not None and alternateframe_index is not None:
+            if alternateframe_index > drug_start_frame:
+                self.trapgetter.get_vesicle_positions(alternateframe,True)
+            else:
+                self.trapgetter.get_vesicle_positions(alternateframe)
+           
+        elif alternateframe is not None and threshold is not None:
+            self.trapgetter.get_vesicle_positions(alternateframe,threshold = threshold)
+        else:   
+            
+            
+            
+            self.trapgetter.get_vesicle_positions(self.vframe)
+            
         traps,labels = self.trapgetter.remove_duplicates()
 
+        
         return traps,labels
 
     def rectangle(self,start, end=None, extent=None, shape=None):
@@ -362,11 +380,18 @@ class Analyser(object):
                     img[rr,cc] = self.clips[self.active_labels == label][0][rr,cc]
         
                     try:
+                        eccentricity = self.get_eccentricity(centre,testclip)
+                
+                        self.firstareatrace[str(label)].append(eccentricity)
                         self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
                         self.filtered_areatrace[str(label)] = smooth(self.areatrace[str(label)],5)
         
                         self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
                     except KeyError:
+                        
+                        eccentricity = self.get_eccentricity(centre,testclip)
+                
+                        self.firstareatrace[str(label)]=[eccentricity]                       
                         self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
                         self.filtered_areatrace[str(label)]=smooth(self.areatrace[str(label)],5)
                         self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
@@ -443,7 +468,8 @@ class Analyser(object):
             img[rr,cc] = firstclip[0][rr,cc]
 
             try:
-                self.firstareatrace[str(label)].append(len(np.nonzero(img)[0]))
+                
+                
                 self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
 
                 self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
@@ -520,6 +546,29 @@ class Analyser(object):
                 self.firstcentres[str(label)] = [centre]
 
 
+    def get_eccentricity(self, centre,clip):
+        #This rotates the clip around angles up to 90 degrees rotation and fits a bounding box, to find the maximum and minimum diameters of deformed vesicle
+        aspect_ratios = []
+        
+        for i in range(0,90,5):
+        
+            rotate_matrix = getRotationMatrix2D(center = (centre[1],centre[0]),angle = i,scale = 1)
+            
+            rotated_clip = warpAffine(src = clip,M = rotate_matrix, dsize = (31,31))
+        
+            coords = np.nonzero(rotated_clip)
+            coords = np.vstack(coords)
+            coords = coords.T
+            
+            x,y,wx,wy  = boundingRect(coords)
+
+
+        aspect_ratios.append(wy/wx)
+            
+        return max(aspect_ratios)
+    
+    
+    
 
     def if_threshold_fails(self,centre,label,firstclip):
 
@@ -527,14 +576,16 @@ class Analyser(object):
         rr,cc = circle(centre[0],centre[1],int(np.sqrt(self.firstareatrace[str(label)][-1])),shape = firstclip.shape)
         img = np.zeros_like(firstclip[0])
         img[rr,cc] = firstclip[0][rr,cc]
-
+        eccentricity = self.get_eccentricity(centre,firstclip)
         try:
-            self.firstareatrace[str(label)].append(len(np.nonzero(img)[0]))
+
+            
+            self.firstareatrace[str(label)].append(eccentricity)
             self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
 
             self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
         except KeyError:
-            self.firstareatrace[str(label)] = [len(np.nonzero(img)[0])]
+            self.firstareatrace[str(label)] = [eccentricity]
             self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
             self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 

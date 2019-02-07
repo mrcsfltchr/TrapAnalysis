@@ -47,19 +47,28 @@ class TrapGetter(object):
         self.kernel_path = path
     
     
-    def get_vesicle_positions(self,frame):
+    def get_vesicle_positions(self,frame,postdetection = False, threshold = None):
         self.frame = frame
         frame = gaussian(frame,2,preserve_range=True)
-        threshold = threshold_otsu(frame)
+        if not postdetection:
+            self.threshold = threshold_otsu(frame)
+        
+        if threshold is not None:
+            self.threshold = threshold
     
-    
+        
         mask = np.zeros_like(frame)
-        mask[frame > threshold] = 1
+        mask[frame > self.threshold] = 1
+        
+
         distance_map = distance_transform_edt(mask)
-        peaks = peak_local_max(distance_map,threshold_abs=3,min_distance=4)
+        
+
+        peaks = peak_local_max(distance_map,threshold_abs=5,min_distance=4)
     
+        
         self.trap_positions = np.array(peaks)
-        print('These are initial trap estimates', self.trap_positions)
+        
         
     
     def get_trap_positions(self,frame):
@@ -82,8 +91,14 @@ class TrapGetter(object):
         
         
     def remove_duplicates(self):
+        if self.trap_positions.shape[0] == 0:
+            print('No vesicles found')
+            
+            return self.trap_positions, np.array([])
+        
         self.duplicates = np.array([])
         self.distances = np.linalg.norm(self.trap_positions - self.trap_positions[:,np.newaxis],axis = 2)
+       
         self.sorted_distances = np.argsort(self.distances,axis = 1)
         
         for row in np.arange(self.sorted_distances.shape[0]):
@@ -96,7 +111,7 @@ class TrapGetter(object):
             else:
                 self.duplicates = np.vstack((self.duplicates,self.pairs))
         
-        print('successfully found all duplicates')
+        
         self.maxdup = np.maximum(self.duplicates[:,0],self.duplicates[:,1])
         self.uniquemaxdup = np.unique(self.maxdup)
         
@@ -104,7 +119,7 @@ class TrapGetter(object):
         
         self.labels = np.arange(1,self.trap_positions.shape[0]+1)
             
-        print("non duplicated labels length " ,self.labels.shape[0])
+        
 
 
         return self.trap_positions,self.labels
