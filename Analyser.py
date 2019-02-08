@@ -263,7 +263,10 @@ class Analyser(object):
 
         counter = 0
         for frame in self.frames[self.t0frameNo:maxframe]:
-
+            
+            if not counter % 10 :
+                print(str(counter) + ' frames analysed')
+                
             tic = time.time()
 
 
@@ -384,7 +387,7 @@ class Analyser(object):
                 
                         self.firstareatrace[str(label)].append(eccentricity)
                         self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
-                        self.filtered_areatrace[str(label)] = smooth(self.areatrace[str(label)],5)
+                        self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
         
                         self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
                     except KeyError:
@@ -393,7 +396,7 @@ class Analyser(object):
                 
                         self.firstareatrace[str(label)]=[eccentricity]                       
                         self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
-                        self.filtered_areatrace[str(label)]=smooth(self.areatrace[str(label)],5)
+                        self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
                         self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
         
         
@@ -468,13 +471,19 @@ class Analyser(object):
             img[rr,cc] = firstclip[0][rr,cc]
 
             try:
+                eccentricity = self.get_eccentricity(centre,testclip)
                 
+                self.firstareatrace[str(label)].append(eccentricity)            
                 
                 self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
 
                 self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
-                self.firstareatrace[str(label)] = [len(np.nonzero(img)[0])]
+                
+                eccentricity = self.get_eccentricity(centre,testclip)
+        
+                self.firstareatrace[str(label)].append(eccentricity)
+                
                 self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
                 self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 
@@ -489,7 +498,7 @@ class Analyser(object):
             try:
 
                 centre = self.firstcentres[str(label)][-1]
-                self.if_threshold_fails(centre,label,firstclip)
+                self.if_threshold_fails(centre,label,firstclip,testclip)
 
             except KeyError or IndexError:
 
@@ -560,33 +569,45 @@ class Analyser(object):
             coords = np.vstack(coords)
             coords = coords.T
             
+            
+            
             x,y,wx,wy  = boundingRect(coords)
 
-
-        aspect_ratios.append(wy/wx)
             
+            
+            
+            
+            if wy > wx and wy> 0 and wx > 0:
+                aspect_ratios.append(wy/wx)
+            elif wy > 0 and wx > 0:
+                aspect_ratios.append(wx/wy)
+                
+            else: 
+                aspect_ratios.append(0)
+                
+        
         return max(aspect_ratios)
     
     
     
 
-    def if_threshold_fails(self,centre,label,firstclip):
+    def if_threshold_fails(self,centre,label,firstclip,testclip):
 
 
         rr,cc = circle(centre[0],centre[1],int(np.sqrt(self.firstareatrace[str(label)][-1])),shape = firstclip.shape)
         img = np.zeros_like(firstclip[0])
         img[rr,cc] = firstclip[0][rr,cc]
-        eccentricity = self.get_eccentricity(centre,firstclip)
+        eccentricity = self.get_eccentricity(centre,testclip)
         try:
 
             
             self.firstareatrace[str(label)].append(eccentricity)
-            self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
+            self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
 
             self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
         except KeyError:
             self.firstareatrace[str(label)] = [eccentricity]
-            self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
+            self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
             self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 
     def delete_vesicle(self,label_as_str):
