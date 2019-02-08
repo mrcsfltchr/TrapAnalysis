@@ -23,12 +23,18 @@ class  TrapViewer(QWidget):
     def __init__(self,qnd,images,trap_positions = None,labels = None):
         QWidget.__init__(self)
         
-        self.video = images
+        self.video = images # This is a file object buffer containing the images
+        
         self.trap_positions = trap_positions
         self.labels = labels
         self.videobox = Label(trap_positions,labels)
-        self.videobox.activeframe = images[TrapViewer.i]
-        self.videobox.maxintens = int(np.max(self.video))
+        self.videobox.activeframe = images.asarray(key = TrapViewer.i)
+        try:
+            self.videobox.maxintens = int(images.imagej_metadata['max'])
+        except KeyError:
+            self.videobox.maxintens =int(np.max(self.videobox.activeframe))
+            
+            
         self.videobox.setGeometry(QtCore.QRect(70, 80, 200, 200))
         
         self.lyt = QVBoxLayout()
@@ -42,7 +48,8 @@ class  TrapViewer(QWidget):
         self.sl = QSlider(Qt.Horizontal)
         
         self.sl.setMinimum(0.0)
-        self.sl.setMaximum(len(self.video)-1)
+        self.sl.setMaximum(self.video.imagej_metadata['frames'])
+        
         self.sl.setTickPosition(QSlider.TicksAbove)
         self.sl.setTracking(True)
         self.sl.setTickInterval(100)
@@ -50,7 +57,7 @@ class  TrapViewer(QWidget):
         self.sl.valueChanged.connect(self.whenslidechanges)
         
         self.frame_counter = QDoubleSpinBox()
-        self.frame = images[0]
+        self.frame = self.videobox.activeframe
         self.frame_counter.setSingleStep(1)
         self.frame_counter.setRange(self.sl.minimum(),self.sl.maximum()-1)
         self.frame_counter.valueChanged.connect(self.sl.setValue)
@@ -83,7 +90,7 @@ class  TrapViewer(QWidget):
         
 
         
-        self.frame = self.video[TrapViewer.i]
+        self.frame = self.video.asarray(key = TrapViewer.i)
         self.videobox.activeframe = self.frame
         
         self.videobox.update()

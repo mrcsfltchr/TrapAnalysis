@@ -26,7 +26,7 @@ class  livestream(QWidget):
         
         
         self.threshold_switch = threshold_switch
-        self.video = images
+        self.video = images #frames buffer
         self.videobox = Label()
         if annotations_on and annotate_coords is not None:
             self.coords = annotate_coords
@@ -38,7 +38,9 @@ class  livestream(QWidget):
         
         if self.video is not None:
             self.videobox.activeframe = self.video[0]
-            self.videobox.maxintens = np.max(self.video)
+            
+            self.videobox.maxintens = self.video.shape[0]
+            
         else:
             self.videobox.activeframe = np.loadtxt(os.getcwd() + '/defaultimage.txt')
             print(self.videobox.activeframe.shape)
@@ -61,7 +63,7 @@ class  livestream(QWidget):
         
         self.sl.setMinimum(0.0)
         if self.video is not None:
-            self.sl.setMaximum(len(self.video))
+            self.sl.setMaximum(self.video.shape[0])
             self.sl.valueChanged.connect(self.whenslidechanges)
         self.sl.setTickPosition(QSlider.TicksAbove)
         self.sl.setTracking(True)
@@ -140,16 +142,18 @@ class  livestream(QWidget):
     def update_display(self):
         
         if self.threshold_switch:
-            threshold = threshold_otsu(self.video[livestream.i])
+            frame = self.video[livestream.i]
+            threshold = threshold_otsu(frame)
             
-            mask = np.zeros_like(self.video[livestream.i])
-            mask[self.video[livestream.i] > threshold] = 1
+            mask = np.zeros_like(frame)
+            mask[frame > threshold] = 1
             self.videobox.maxintens = 1
             self.videobox.activeframe = mask
         else:
             #if threshold switch is off display usual video, so change active frame source and reset maximum intensity for passing to qimage2ndarray
             self.videobox.activeframe = self.video[livestream.i]
             self.videobox.maxintens = np.max(self.video)
+            
         try:
             self.videobox.activecoord = self.coords[livestream.i]
 

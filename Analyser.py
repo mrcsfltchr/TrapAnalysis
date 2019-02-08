@@ -93,14 +93,23 @@ class Analyser(object):
 
     def load_frames(self,t0 = None,tmax = None):
 
+        '''
         with tf.TiffFile(self.videopath) as tif:
             if t0 is not None:
                 frames = tif.asarray(key = slice(t0,tmax))
             else:
                 frames = tif.asarray()
         print('Done!')
-
-        return frames
+        '''
+        
+        frames = tf.TiffFile(self.videopath)
+        
+        try:
+            videolength = frames.imagej_metadata['frames']
+        except:
+            videolength = None
+            
+        return frames, videolength
 
 
 
@@ -111,7 +120,10 @@ class Analyser(object):
 
         #drug_start_frame is the index of the frame in which drug arrives. If an alternateframe is supplied, the index of it must also be supplied. This is compared to the drug_start_frame index. If it is larger we then don't determine a new threshold to binarise the alternate frame as we assume drug has arrived. When drug has arrived otsu's thresholding will fail.
         if self.frames is not None and alternateframe is None:
-                self.vframe = self.frames[drug_start_frame]
+            self.vframe = self.frames.asarray(key = int(drug_start_frame))
+            print(self.vframe)
+            
+            
         '''
         self.visibletrapframe = self.frames[-1]
 
@@ -183,7 +195,7 @@ class Analyser(object):
         for trap in self.trapgetter.trap_positions:
 
 
-            clip = np.zeros_like(self.frames[0])
+            clip = np.zeros_like(self.frames.asarray(key = 0))
 
             try:
                 clip[self.rectangle(start = trap-[self.trapgetter.topboxrel,self.trapgetter.leftboxrel],end = trap +[self.trapgetter.bottomboxrel,self.trapgetter.rightboxrel])[0],self.rectangle(start = trap-[self.trapgetter.topboxrel,self.trapgetter.leftboxrel],end = trap +[self.trapgetter.bottomboxrel,self.trapgetter.rightboxrel])[1]]=1
@@ -217,9 +229,10 @@ class Analyser(object):
 
         #classify contents of boxes in t = 0 frame, and then switch off recording for initially empty boxes
         if multivid:
-            initial_frame = self.frames[0]
+            initial_frame = self.frames.asarray(key = 0)
         else:
-            initial_frame = self.frames[self.t0frameNo]
+            initial_frame = self.frames.asarray(key = self.t0frameNo)
+            
 
 
         self.clips = initial_frame.flatten().T*self.mask
@@ -258,11 +271,12 @@ class Analyser(object):
 
         if multivid:
             self.t0frameNo = 0
-            maxframe = self.frames.shape[0]
+            maxframe = self.videolength
 
 
         counter = 0
-        for frame in self.frames[self.t0frameNo:maxframe]:
+        for ind in range(self.t0frameNo,maxframe):
+            frame = self.frames.asarray(key = ind)
             
             if not counter % 10 :
                 print(str(counter) + ' frames analysed')
@@ -348,11 +362,13 @@ class Analyser(object):
     def extract_background_intensity(self):
         self.bgoffset = [int(0.5*np.median(self.trapgetter.distances[np.arange(self.trapgetter.distances.shape[0]),self.trapgetter.sorted_distances[:,1]][self.trapgetter.distances[np.arange(self.trapgetter.distances.shape[0]),self.trapgetter.sorted_distances[:,1]] > 10])),0]
         self.bgcentrecoords = self.trapgetter.trap_positions[self.trapgetter.labels == 0][0] - self.bgoffset
-
-        self.bgintens = np.average(A.frames[:,self.bgcentrecoords[0]-3:self.bgcentrecoords[0]+3,self.bgcentrecoords[1]-3:self.bgcentrecoords[1]+3],axis = (1,2))
+        last_few_frames = self.frames.asarray(slice(self.videolength-5,self.videolength))
+        self.bgintens = np.average(last_few_frames[:,self.bgcentrecoords[0]-3:self.bgcentrecoords[0]+3,self.bgcentrecoords[1]-3:self.bgcentrecoords[1]+3],axis = (1,2))
 
     def extract_background(self,maxlen):
-        self.bgintens = np.average(self.frames[-5:])
+        last_few_frames = self.frames.asarray(slice(self.videolength-5,self.videolength))
+        
+        self.bgintens = np.average(last_few_frames)
 
 
 

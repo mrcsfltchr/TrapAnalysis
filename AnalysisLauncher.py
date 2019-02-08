@@ -79,8 +79,8 @@ class AnalysisLauncher(QtWidgets.QWidget):
 
 
 
-    def update_frames(self,frames):
-
+    def update_frames(self,videolength):
+        '''
         if frames is not None:
             
             self.frameNo = np.arange(frames.shape[0]).astype(str)
@@ -89,7 +89,15 @@ class AnalysisLauncher(QtWidgets.QWidget):
             
             self.t0selector.addItems(self.frameNo)
 
-
+        '''
+        if videolength is None:
+            return -1
+        
+        frame_indices = np.arange(videolength).astype(str)
+        
+        self.tmaxselector.addItems(frame_indices)
+        self.t0selector.addItems(frame_indices)
+        
     def update_exp_frames(self):
 
         try:

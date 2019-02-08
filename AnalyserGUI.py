@@ -246,10 +246,10 @@ class AnalyserPanel(QWidget):
             if isTiff(video_path) == 0:
                 try:
                     print('made it here')
-                    self.analyser.frames = self.analyser.load_frames()
-                    print('frame deposit length ',self.analyser.frames.shape[0])
+                    self.analyser.frames, self.analyser.videolength = self.analyser.load_frames()
+                    print('frame deposit length ',self.analyser.videolength)
                     
-                    self.AControl.update_frames(self.analyser.frames)
+                    self.AControl.update_frames(self.analyser.videolength)
                     self.has_frames = True
                     
                 except Exception as e:
@@ -272,8 +272,8 @@ class AnalyserPanel(QWidget):
             self.AControl.t0selector.setCurrentText(str(t0))
             
             tmax = t0 +1200
-            if tmax > self.analyser.frames.shape[0]:
-                self.AControl.tmaxselector.setCurrentText(str(self.analyser.frames.shape[0]))
+            if tmax > self.analyser.videolength:
+                self.AControl.tmaxselector.setCurrentText(str(self.analyser.videolength))
             else:
                 self.AControl.tmaxselector.setCurrentText(str(tmax))
                 
@@ -613,7 +613,7 @@ class AnalyserPanel(QWidget):
         print(self.mythread.isRunning())
         self.msgbox.setText('Video Successfully Loaded!')
         self.msgbox.exec_()
-        print(self.analyser.frames)
+        
         self.vid_control.showdisplay.clicked.connect(self.load_display)
         self.vid_control.withtraps_switch.clicked.connect(self.turn_on_traps)
         
@@ -623,7 +623,7 @@ class AnalyserPanel(QWidget):
         self.tc.trapgetbtn.clicked.connect(self.get_traps)
         self.tc.viewtrapkernelbtn.clicked.connect(self.view_kernel)
         # connect trap buttons to the analyser
-        self.AControl.update_frames(self.analyser.frames)
+        self.AControl.update_frames(self.analyser.videolength)
     
 
         
@@ -679,7 +679,7 @@ class AnalyserPanel(QWidget):
                 self.remove_empty_vid_paths()
                 self.multi_run_analysis()
             ''' 
-            
+    '''        
     def multi_run_analysis(self):
         self.activelabels_byvid = {}
          
@@ -764,7 +764,7 @@ class AnalyserPanel(QWidget):
 
         print(self.analyser.trapgetter.trap_positions)           
                 
-        
+    '''     
     def run_just_analysis(self):
         
 
@@ -904,6 +904,8 @@ class AnalyserPanel(QWidget):
         else:
             t0 = self.bgf.peak_max_arg
             
+            print('t0 is equal to the peak max index')
+            
             self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
             file = open(os.getcwd() +'/Experimentalflowrates.csv','w')
 
@@ -924,7 +926,8 @@ class AnalyserPanel(QWidget):
                 if multividflag:
                     traps, labels = self.analyser.get_traps(0)
                 else:
-
+                    print('made it to calling analyser get traps')
+                    print('t0 is equal to ',t0)
                     traps,labels = self.analyser.get_traps(t0)
                 
                 #Once traps have been successfully found, make them available for display on video view
@@ -933,7 +936,9 @@ class AnalyserPanel(QWidget):
             
                 return traps,labels
             
-            except:
+            except Exception as e:
+                print(e)
+                
                 self.msgbox.setText('Getting traps failed. Check Kernel, and that the visibility of the traps in the\n last frame is good')
                 self.msgbox.show()
         return t0
@@ -1044,7 +1049,7 @@ class QAnalyser(QtCore.QObject):
 
     def run(self):
         
-        self.analyser.frames = self.analyser.load_frames()
+        self.analyser.frames, self.analyser.videolength = self.analyser.load_frames()
         self.sig1.emit()
 
     def run_just_analysis(self):

@@ -23,7 +23,8 @@ class SingleVesViewer(QtWidgets.QWidget):
         #this function checks if the input traps and labels are spread over many videos or just one. It sets the structure of the trap position and trap label data stores accordingly and returns either True or False depending on whether there are several videos or just one
         
         self.multividflag = self.checkformultiness(frames,traps,labels,active_labels)
-                    
+           
+
                 
         self.box_dimensions = box_dimensions
         self.centres = None
@@ -189,7 +190,7 @@ class SingleVesViewer(QtWidgets.QWidget):
         
         
         if type(traps) != dict:
-             self.frames_by_vid = frames
+             self.frames_by_vid = frames #video buffer
              self.trap_positions = traps
              self.labels = labels
              self.activelabels = activelabels
@@ -389,8 +390,10 @@ class SingleVesViewer(QtWidgets.QWidget):
         trap = self.trap_positions[self.labels == label][0]
         
         print('This is the trap',trap)
+        frames = self.frames_by_vid[key].asarray()
+        videolength = self.frames_by_vid[key].imagej_metadata['frames']
         
-        clip = np.zeros_like(self.frames_by_vid[key][0])
+        clip = np.zeros_like(frames[0])
         
         try:
             #here we create a binary mask of shape 512*512 (frame size of video) such that only pixels within the labelled trap have value 1 and the rest 0
@@ -406,11 +409,11 @@ class SingleVesViewer(QtWidgets.QWidget):
         #Here exploit numpy array broadcasting. First flatten each frame in the full video into a vector so that we get a 2d array of shape, No.of frames of video requested by user  by (512*512). Then we multiply each of these vectors by the binary mask calculated just before to extract the pixels within the requested trap. Then finally we remove the non zero pixels and reshape.
         
         
-        self.vesiclelife = self.frames_by_vid[key].reshape(self.frames_by_vid[key].shape[0],self.frames_by_vid[key].shape[1]*self.frames_by_vid[key].shape[2])*clip.flatten()
+        self.vesiclelife = frames.reshape(videolength,frames.shape[1]*frames.shape[2])*clip.flatten()
         
         self.vesiclelife = self.vesiclelife[self.vesiclelife !=0]
         
-        self.vesiclelife = self.vesiclelife.reshape(self.frames_by_vid[key].shape[0],31,31)
+        self.vesiclelife = self.vesiclelife.reshape(videolength,31,31)
 
 
     def rectangle(self,start, end=None, extent=None, shape=None):
