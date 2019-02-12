@@ -27,6 +27,7 @@ from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
 from BackgroundFinder import BackgroundFinder
 from readvidsfromdir import get_video_paths
+from ifvesiclemoves import subtract_moved_vesicles
 
 
 
@@ -834,6 +835,9 @@ class AnalyserPanel(QWidget):
         
         self.sv.proceed_to_directional_query.accepted.connect(self.create_persisting_times)
         print('analysis Done')
+        
+        
+        
     def run_analysis(self):
     
         # run analysis
@@ -849,12 +853,52 @@ class AnalyserPanel(QWidget):
         if self.analyser.trapgetter.trap_positions is not None:
             
             self.run_just_analysis()
+            
+            self.remove_vesicles_which_moved()
+            
             self.save_data_btn.clicked.connect(self.save_data)
+            
+            
             self.sv.show()
             print(self.analyser.trapgetter.trap_positions)
         else:
             self.msgbox.setText('Make sure video has been loaded and trap positions have been found. Press "Get Traps" ')
             self.msgbox.show()
+
+
+    def remove_vesicles_which_moved(self):
+        
+        
+        kill_labels = subtract_moved_vesicles(self,self.analyser.frames,int(self.AControl.t0selector.currentText()),self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels)
+        
+        if kill_labels.shape[0] == 0:
+            print('No vesicles were found to have moved')
+            return
+        
+        
+        for label in kill_labels:
+
+            try:
+                del self.analyser.intensitytrace[str(label)]
+                del self.analyser.firstintensitytrace[str(label)]
+                del self.analyser.secondintensitytrace[str(label)]
+                del self.analyser.firstsecondintensitytrace[str(label)]
+                del self.analyser.bg_sub_intensity_trace[str(label)]
+                del self.analyser.bg_sub_firstintensity_trace[str(label)]
+                del self.analyser.filtered_intensity_trace[str(label)]
+                del self.analyser.filtered_first_intensity_trace[str(label)]
+                del self.analyser.second_bg_fsi_trace[str(label)]
+                del self.analyser.second_bg_si_trace[str(label)]
+                del self.analyser.areatrace[str(label)]
+                del self.analyser.firstareatrace[str(label)]
+                del self.analyser.filtered_areatrace[str(label)]
+                del self.analyser.filtered_firstareatrace[str(label)]
+                del self.analyser.firstsecondareatrace[str(label)]
+                del self.analyser.secondareatrace[str(label)]
+            except KeyError:
+                print('Did not find any data extract for vesicle with this label')
+                
+                
 
     def view_kernel(self):
     
@@ -1184,9 +1228,8 @@ class VideoViewingBox(QWidget):
         
     def create_video_display(self,frames=None):
         switch = 1
-        try:
-            frames.shape
-        except:
+        
+        if frames is None:
             switch = 0
             self.warningbox.setText('No Frames are accessible, load a video!')
             self.warningbox.show()
