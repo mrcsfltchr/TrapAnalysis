@@ -41,7 +41,7 @@ def subtract_moved_vesicles(self,frames,start_frame,trap_positions=None,labels=N
 
 
 
-        peaks = np.vstack((pos_peaks,neg_peaks))
+   
 
 
         if len(pos_peaks) >0 and len(neg_peaks) > 0:
@@ -50,6 +50,7 @@ def subtract_moved_vesicles(self,frames,start_frame,trap_positions=None,labels=N
             #remains to pair the negative peak and positive peak to make sure a vesicle moved and didnt just burst
 
             pair_vectors = pos_peaks[np.newaxis] - neg_peaks
+
             
             if pair_vectors.shape[1] ==1:
                 
@@ -62,10 +63,8 @@ def subtract_moved_vesicles(self,frames,start_frame,trap_positions=None,labels=N
             else:
                 pair = pair_vectors[np.absolute(pair_vectors[:,:,0]) < 60]
 
-
                 if pair_vectors.shape[1] == 1:
-                    plt.imshow(frame)
-                    plt.show()
+
 
                     if interficiendum is None:
                         interficiendum = neg_peaks[pair_vectors[:,0] < 60]
@@ -74,13 +73,15 @@ def subtract_moved_vesicles(self,frames,start_frame,trap_positions=None,labels=N
                         interficiendum = np.vstack(interficiendum,neg_peaks[pair_vectors[:,0] < 60])  
 
                 else:
+                    
                     pair = pair_vectors[pair_vectors[:,:,1] < 0]
                     pair = pair[pair[:,0] < 60]
 
                     #if there is at least a pair of positive and negative peaks which are vertically less than 60 pixels away and arranged horizontally so the positive peak is on the left
                      #then we choose to bin the vesicle which in the previous frame was in the position of the nearest negative peak to a positive peak
 
-                    if len(neg_peaks) > 1 and len(pair[0]) > 0:
+                    
+                    if len(neg_peaks) > 1 and len(pair) and len(pair[0]) > 0:
 
                         peak = neg_peaks[[np.absolute(pair_vectors[:,:,0]) == np.min(np.absolute(pair_vectors[:,:,0]))][0][0]]
 

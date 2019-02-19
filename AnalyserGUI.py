@@ -280,7 +280,7 @@ class AnalyserPanel(QWidget):
                 
             self.run_just_analysis()
             
-            
+            self.remove_vesicles_which_moved()
             self.video_directory = self.save_dir_path + '/'
 
             self.auto_save_data()
@@ -860,7 +860,7 @@ class AnalyserPanel(QWidget):
             
             
             self.sv.show()
-            print(self.analyser.trapgetter.trap_positions)
+
         else:
             self.msgbox.setText('Make sure video has been loaded and trap positions have been found. Press "Get Traps" ')
             self.msgbox.show()
@@ -868,6 +868,7 @@ class AnalyserPanel(QWidget):
 
     def remove_vesicles_which_moved(self):
         
+        print('Current start frame value , ' , self.AControl.t0selector.currentText())
         
         kill_labels = subtract_moved_vesicles(self,self.analyser.frames,int(self.AControl.t0selector.currentText()),self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels)
         
@@ -898,7 +899,9 @@ class AnalyserPanel(QWidget):
             except KeyError:
                 print('Did not find any data extract for vesicle with this label')
                 
-                
+        self.analyser.trapgetter.labels = self.analyser.trapgetter.labels[np.searchsorted(self.analyser.trapgetter.labels,kill_labels)]
+        self.analyser.trapgetter.trap_positions = self.analyser.trapgetter.trap_positions[np.searchsorted(self.analyser.trapgetter.labels,kill_labels)]
+        
 
     def view_kernel(self):
     

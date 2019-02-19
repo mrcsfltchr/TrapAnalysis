@@ -294,6 +294,8 @@ class Analyser(object):
                 self.firstactiveclips = self.firstactiveclips[self.firstactiveclips > 0].reshape(self.firstactiveclips.shape[0],31,31)
             
                 self.extract_intens_all_ves(counter)
+                counter +=1
+                
                 continue
             
             
