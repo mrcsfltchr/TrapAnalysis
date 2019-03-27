@@ -18,13 +18,16 @@ from HeatPlotGenerator import HeatPlotGenerator
 import sys
 from scipy.ndimage import gaussian_filter1d as smooth
 from cv2 import warpAffine, getRotationMatrix2D, boundingRect
+import cv2
+from numpy.core.defchararray import add
 
 class Analyser(object):
 
-    def __init__(self,path):
+    def __init__(self,path=None):
 
         #add deposit for a list of paths,trap coordinates for each video and their corresponding labels.
         self.videopaths =None
+        self.videopos = ''
         self.traps_by_vid = {}
         self.labels_by_vid = {}
         self.multivid_frames = {}
@@ -51,7 +54,8 @@ class Analyser(object):
 
         self.filtered_intensity_trace = {}
         self.filtered_first_intensity_trace = {}
-
+        self.rffitrace = {}
+        
         self.second_bg_si_trace = {}
         self.second_bg_fsi_trace = {}
 
@@ -60,7 +64,8 @@ class Analyser(object):
 
         self.filtered_areatrace = {}
         self.filtered_firstareatrace = {}
-
+        self.rffatrace = {}
+        
         self.firstsecondareatrace = {}
         self.secondareatrace = {}
 
@@ -147,6 +152,15 @@ class Analyser(object):
             
         traps,labels = self.trapgetter.remove_duplicates()
 
+        prelabels = int(self.videopos) * np.ones(labels.shape).astype(int)
+        prelabels = prelabels.astype(str)
+        labels = labels.astype(str)
+        
+        labels = add(prelabels,labels)
+        
+        labels = labels.astype(int)
+        
+        self.trapgetter.labels = labels
         
         return traps,labels
 
@@ -263,17 +277,17 @@ class Analyser(object):
         return clips
 
 
-    def analyse_frames(self,maxframe,multivid = False):
+    def analyse_frames(self,maxframe,multivid = False,just_area=False):
 
 
 
         #initialize active labels and active mask here.
-
+        kernel = np.ones((3,3),np.uint8)
         if multivid:
             self.t0frameNo = 0
             maxframe = self.videolength
 
-
+        print(maxframe)
         counter = 0
         for ind in range(self.t0frameNo,maxframe):
             frame = self.frames.asarray(key = ind)
@@ -293,7 +307,10 @@ class Analyser(object):
                 self.firstactiveclips = frame.flatten().T*self.firstactivemask
                 self.firstactiveclips = self.firstactiveclips[self.firstactiveclips > 0].reshape(self.firstactiveclips.shape[0],31,31)
             
-                self.extract_intens_all_ves(counter)
+                if just_area:
+                    self.run_just_area_analysis()
+                else:
+                    self.extract_intens_all_ves(counter,kernel)
                 counter +=1
                 
                 continue
@@ -321,8 +338,11 @@ class Analyser(object):
             self.class_labels = self.classifier.predict(self.zero2oneclips[:,:30,:30,np.newaxis],batch_size = self.clips.shape[0])
 
             self.class_labels = self.class_labels.reshape(self.class_labels.shape[0],)
-
-            self.extract_intens_all_ves(counter)
+            if just_area:
+                self.run_just_area_analysis()
+            else:
+                
+                self.extract_intens_all_ves(counter,kernel)
 
 
             self.active_labels = self.active_labels[self.class_labels.astype(int) == 1]
@@ -335,11 +355,95 @@ class Analyser(object):
 
 
             counter +=1
+    def run_just_area_analysis(self):
+        
+        kernel = np.ones((3,3),np.uint8)
+        plt.figure()
+        for label in self.firstactivelabels:
+            if self.clips.shape[0] > 0:
+            
+                clip = self.clips[self.active_labels == label]
+                if clip.shape[0] > 0:
+                    threshold = threshold_otsu(clip)
+            
+                    testclip = np.zeros_like(self.clips[self.active_labels == label].reshape(31,31))
+            
+                    testclip[self.clips[self.active_labels == label].reshape(31,31) > (threshold + 0.3*threshold)] = 1
+                    
+                    testclip = cv2.normalize(src=testclip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
+                    
+                    opening = cv2.morphologyEx(testclip,cv2.MORPH_OPEN,kernel,iterations = 2)
+                    
+                    #sure background area
+                    sure_bg = cv2.dilate(opening,kernel,iterations=3)
+                    
+                    #Find sure foreground area
+                    dist_transform = cv2.distanceTransform(opening,cv2.DIST_L2,5)
+                    
+                    ret, sure_fg = cv2.threshold(dist_transform,0.6*dist_transform.max(),255,0)
+                    sure_fg = np.uint8(sure_fg)
+                    unknown = cv2.subtract(sure_bg,sure_fg)
+                    
+                    ret, markers = cv2.connectedComponents(sure_fg)
+                    markers = markers +1
+                    markers[unknown==255] = 0
+                    clip = clip.reshape(31,31)
+                    clip = smooth(clip,sigma = 1)
+                    
+                    print(clip.shape, clip)
+                    nclip = cv2.normalize(src=clip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
+                    gclip = cv2.cvtColor(nclip,cv2.COLOR_GRAY2BGR)
+                    markers = cv2.watershed(gclip,markers)
+                    print(np.argwhere(markers == 2))
+                    
+                    
+                    
+                    '''gclip[markers == -1] = 255
+                    gclip[markers==3] = 125
+                    gclip[markers==1]= 0
+                    plt.subplot(121)
+                    plt.imshow(gclip,cmap = 'gray')
+                    plt.subplot(122)
+                    plt.imshow(clip)
+                    plt.show()
+                    '''
+                    
+    def extract_area(self,testclip,kernel,clip):
+        #kernel is the 2D spreading function which dilates the edges in a process similar to convolution but where the convolution is performed conditionally on a foreground pixel not being completely surrounded by other foreground pixels
+        
+        testclip = cv2.normalize(src=testclip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
+                    
+        opening = cv2.morphologyEx(testclip,cv2.MORPH_OPEN,kernel,iterations = 2)
+        
+        #sure background area
+        sure_bg = cv2.dilate(opening,kernel,iterations=3)
+        
+        #Find sure foreground area
+        dist_transform = cv2.distanceTransform(opening,cv2.DIST_L2,5)
+        
+        ret, sure_fg = cv2.threshold(dist_transform,0.6*dist_transform.max(),255,0)
+        sure_fg = np.uint8(sure_fg)
+        unknown = cv2.subtract(sure_bg,sure_fg)
+        
+        ret, markers = cv2.connectedComponents(sure_fg)
+        markers = markers +1
+        markers[unknown==255] = 0
+        clip = clip.reshape(31,31)
+        clip = smooth(clip,sigma = 1)
+        
 
-    def extract_intens_all_ves(self,counter):
+        nclip = cv2.normalize(src=clip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
+        gclip = cv2.cvtColor(nclip,cv2.COLOR_GRAY2BGR)
+        markers = cv2.watershed(gclip,markers)
+        pixelarea = np.argwhere(markers == 2).shape[0]
+        
+        
+        return pixelarea
+    
+    def extract_intens_all_ves(self,counter,kernel):
         
         for label in self.firstactivelabels:
-            self.extract_intensity(label,counter)
+            self.extract_intensity(label,counter,kernel)
             
     def visualise_active_clips(self,num = 3):
 
@@ -374,8 +478,9 @@ class Analyser(object):
 
 
 
-    def extract_intensity(self,label,counter):
+    def extract_intensity(self,label,counter,kernel):
 
+        
         if self.clips.shape[0] > 0:
             
             clip = self.clips[self.active_labels == label]
@@ -404,8 +509,8 @@ class Analyser(object):
                         eccentricity = self.get_eccentricity(centre,testclip)
                 
                         self.firstareatrace[str(label)].append(eccentricity)
-                        self.areatrace[str(label)].append(len(np.nonzero(img)[0]))
-                        self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
+                        #self.areatrace[str(label)].append(self.extract_area(testclip,kernel,clip))
+                        self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],0.5)
         
                         self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
                     except KeyError:
@@ -413,8 +518,8 @@ class Analyser(object):
                         eccentricity = self.get_eccentricity(centre,testclip)
                 
                         self.firstareatrace[str(label)]=[eccentricity]                       
-                        self.areatrace[str(label)] = [len(np.nonzero(img)[0])]
-                        self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
+                        #self.areatrace[str(label)] = [self.extract_area(testclip,kernel,clip)]
+                        self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],0.5)
                         self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
         
         
@@ -464,7 +569,7 @@ class Analyser(object):
                     except KeyError:
                         self.centres[str(label)] = [centre]
         
-
+        
         firstclip = self.firstactiveclips[self.firstactivelabels == label]
         threshold = threshold_otsu(firstclip)
         testclip = np.zeros_like(firstclip.reshape(31,31))
@@ -472,9 +577,9 @@ class Analyser(object):
 
 
         try:
-            self.firstsecondareatrace[str(label)].append(len(testclip[testclip >0]))
+            self.firstsecondareatrace[str(label)].append(self.extract_area(testclip,kernel,firstclip))
         except KeyError:
-            self.firstsecondareatrace[str(label)] = [len(testclip[testclip >0])]
+            self.firstsecondareatrace[str(label)] = [self.extract_area(testclip,kernel,firstclip)]
 
         dt = distance_transform_edt(testclip)
 
@@ -492,17 +597,17 @@ class Analyser(object):
                 eccentricity = self.get_eccentricity(centre,testclip)
                 
                 self.firstareatrace[str(label)].append(eccentricity)            
-                
-                self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
+                self.areatrace[str(label)].append(self.extract_area(testclip,kernel,firstclip))
+                self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],0.5)
 
                 self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
                 
                 eccentricity = self.get_eccentricity(centre,testclip)
-        
-                self.firstareatrace[str(label)].append(eccentricity)
+                self.areatrace[str(label)] = [self.extract_area(testclip,kernel,firstclip)]
+                self.firstareatrace[str(label)]= [eccentricity]
                 
-                self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
+                self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],0.5)
                 self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 
 
@@ -620,12 +725,12 @@ class Analyser(object):
 
             
             self.firstareatrace[str(label)].append(eccentricity)
-            self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],5)
+            self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],0.5)
 
             self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
         except KeyError:
             self.firstareatrace[str(label)] = [eccentricity]
-            self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],5)
+            self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],0.5)
             self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 
     def delete_vesicle(self,label_as_str):
@@ -717,7 +822,7 @@ class Analyser(object):
         self.ls = livestream(qnd,video[t0:tmax],annotations_on = annotations,annotate_coords = self.centres[str(label)])
 
 
-    def subtract_background(self,sigma = 5):
+    def subtract_background(self,sigma = 0.5):
 
         for key in self.firstintensitytrace.keys():
 

@@ -18,7 +18,7 @@ class SaveBox(QWidget):
 
     #pass the dictionaries to be saved
     auto_sig = pyqtSignal()
-    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,first_filtered_intensities,areas,firstareas,filtered_areas,first_filtered_areas,centres,firstcentres,t0,tmax,save_directory,vid_id= None, auto = False):
+    def __init__(self,labelled_traps,intensities,firstintensities,filtered_intensities,first_filtered_intensities,areas,firstareas,filtered_areas,first_filtered_areas,centres,firstcentres,rffitrace,rffatrace,t0,tmax,save_directory,vid_id= None, auto = False):
         
         
         QWidget.__init__(self)
@@ -44,11 +44,13 @@ class SaveBox(QWidget):
         
         self.fintensities = filtered_intensities
         self.ffintensities = first_filtered_intensities
+        self.rffitrace = rffitrace
         
         self.areas = areas
         self.firstareas = firstareas
         self.fareas = filtered_areas
         self.ffareas = first_filtered_areas
+        self.rffatrace = rffatrace
         
         self.centres = centres
         self.firstcentres = centres
@@ -135,10 +137,14 @@ class SaveBox(QWidget):
         df.to_csv(self.sd + 'detected_at_beginning_Intensities' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
 
         df = pd.DataFrame.from_dict(self.ffintensities,orient = 'index').transpose().fillna('')
-
-        df.to_csv(self.sd + 'detected_at_beginning_filtered_Intensities' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')        
+        
+        df.to_csv(self.sd + 'detected_at_beginning_non_filtered_Intensities' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')  
+        
+        df = pd.DataFrame.from_dict(self.rffitrace,orient='index').transpose().fillna('')
+        print(df)
+        df.to_csv(self.sd+'detected_at_beginning_filtered_Intensities' + '_' + self.save_Date.text()+'_' + self.save_Time.text()+ '.csv')
         #Save Areas
-
+        
         df = pd.DataFrame.from_dict(self.areas,orient = 'index').transpose().fillna('')
 
         df.to_csv(self.sd + 'Areas' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
@@ -153,8 +159,10 @@ class SaveBox(QWidget):
 
         df = pd.DataFrame.from_dict(self.ffareas,orient = 'index').transpose().fillna('')
 
-        df.to_csv(self.sd + 'Detected_at_beginning_filtered_Areas' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
-
+        df.to_csv(self.sd + 'Detected_at_beginning_non_filtered_Areas' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv')
+        df = pd.DataFrame.from_dict(self.rffatrace,orient='index').transpose().fillna('')
+        
+        df.to_csv(self.sd+'detected_at_beginning_filtered_Areas' + '_' + self.save_Date.text()+'_' + self.save_Time.text()+ '.csv')
         #Save Detected Vesicle Centres. these are serialised using pickle as do not anticipate the user wanting to use the detected centre coordinates outside of python
 
         file = open(self.sd + 'Centres' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.txt','wb')
@@ -195,8 +203,13 @@ class SaveBox(QWidget):
         df.to_csv(self.sd + 'detected_at_beginning_Intensities' + vid_id+ '.csv')
 
         df = pd.DataFrame.from_dict(self.ffintensities,orient = 'index').transpose().fillna('')
-
-        df.to_csv(self.sd + 'detected_at_beginning_filtered_Intensities' + '_' + vid_id+ '.csv')        
+        
+        df.to_csv(self.sd + 'detected_at_beginning_non_filtered_Intensities' + '_' + vid_id+ '.csv')        
+        
+        df = pd.DataFrame.from_dict(self.rffitrace,orient = 'index').transpose().fillna('')
+        print(df)
+        
+        df.to_csv(self.sd + 'detected_at_beginning_filtered_Intensities' + '_' + vid_id+ '.csv')  
         #Save Areas
 
         df = pd.DataFrame.from_dict(self.areas,orient = 'index').transpose().fillna('')
@@ -213,8 +226,11 @@ class SaveBox(QWidget):
 
         df = pd.DataFrame.from_dict(self.ffareas,orient = 'index').transpose().fillna('')
 
-        df.to_csv(self.sd + 'Detected_at_beginning_filtered_Areas' +vid_id+ '.csv')
+        df.to_csv(self.sd + 'Detected_at_beginning_non_filtered_Areas' +vid_id+ '.csv')
+        
+        df = pd.DataFrame.from_dict(self.rffatrace,orient = 'index').transpose().fillna('')
 
+        df.to_csv(self.sd + 'Detected_at_beginning_filtered_Areas' +vid_id+ '.csv')
         #Save Detected Vesicle Centres. these are serialised using pickle as do not anticipate the user wanting to use the detected centre coordinates outside of python
 
         file = open(self.sd + 'Centres' + vid_id + '.txt','wb')

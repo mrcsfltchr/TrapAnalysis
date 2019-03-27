@@ -98,11 +98,9 @@ class BackgroundFinder(object):
         
         #frames must be an array of shape, (Number of frames,Image Height, Image Width)
 
-        #we take the median value for each frame as it is less skewed by the high intensity outliers. i.e. the vesicles
 
         frames = frames_buffer.asarray()
-        
-        
+       
         self.background_intens = np.median(frames,axis = (1,2))
 
 

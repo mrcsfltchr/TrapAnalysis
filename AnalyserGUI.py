@@ -27,9 +27,9 @@ from DirectionalHeatImage import DirectionalHeatMap,DirectionalHMBox
 from SingleVesViewer import saveboxview
 from BackgroundFinder import BackgroundFinder
 from readvidsfromdir import get_video_paths
-from ifvesiclemoves import subtract_moved_vesicles
-
-
+from ifvesiclemoves import findmovedvesicles
+from bigintensityjumps import findjump
+import copy
 
 
 
@@ -96,6 +96,7 @@ class AnalyserPanel(QWidget):
         
         #save the video directory path to save the analysed data in. This is solely for organising the results helpfully
         self.video_directory = None
+        
         #debugging process convenience tool: Upload previous Analysis
         
         self.save_data_btn = QtWidgets.QPushButton('Save Data')
@@ -241,6 +242,13 @@ class AnalyserPanel(QWidget):
         for video_path in self.dir_path_list:
             counter +=1
             print(video_path)
+            if video_path.find('Pos')+3 == '0':
+                self.analyser.videopos = '9'
+            else:
+                
+                self.analyser.videopos = video_path[video_path.find('Pos')+3]
+            
+            print('Why am I here?')
             if os.getcwd() != self.save_dir_path:
                 os.chdir(self.save_dir_path)
             self.analyser.videopath = video_path
@@ -274,21 +282,60 @@ class AnalyserPanel(QWidget):
             
             tmax = t0 +1200
             if tmax > self.analyser.videolength:
-                self.AControl.tmaxselector.setCurrentText(str(self.analyser.videolength))
+                self.AControl.tmaxselector.setCurrentText(str(self.analyser.videolength - 1))
             else:
                 self.AControl.tmaxselector.setCurrentText(str(tmax))
                 
             self.run_just_analysis()
             
-            self.remove_vesicles_which_moved()
+            self.remove_vesicles_which_moved(self.analyser.filtered_first_intensity_trace)
             self.video_directory = self.save_dir_path + '/'
 
             self.auto_save_data()
                 
             
+       
+    def remove_vesicles_which_moved(self,dictionary,threshold = -0.07,frames =None):
+        
+        jump_frames = []
+        for key in dictionary.keys():
             
-
-
+            vesintens = np.array(dictionary[key])
+            large_jumps, diffs  = findjump(vesintens,threshold)
+            
+            if large_jumps.shape[0] > 0:
+                jump_frames.append([key,large_jumps[0]+int(self.AControl.t0selector.currentText()),diffs[large_jumps[0]]])
+                
+        if frames is None:
+            frames = self.analyser.frames
+            
+        tbk = []
+        for frame_datum in jump_frames:
+            
+            images= frames.asarray(key = slice(frame_datum[1],frame_datum[1]+2))
+            
+            subtracted_images = images[0]-images[1]
+            
+    
+            
+            tbk.append(findmovedvesicles(subtracted_images))
+           
+        #copy the filtered intensity trace data and then delete the removed vesicles from it
+        
+        self.analyser.rffitrace = copy.deepcopy(self.analyser.filtered_first_intensity_trace)
+        self.analyser.rffatrace = copy.deepcopy(self.analyser.filtered_firstareatrace)
+        
+        print(self.analyser.rffitrace)
+        for i in range(0,len(tbk)):
+            
+            try: 
+                tbk[i][0]
+                del self.analyser.rffitrace[jump_frames[i][0]]
+    
+                del self.analyser.rffatrace[jump_frames[i][0]]
+                print('removed vesicle')
+            except TypeError:
+                continue
     
     def purge(self):
 
@@ -534,7 +581,7 @@ class AnalyserPanel(QWidget):
         
         
         save_directory = self.video_directory
-        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory)
+        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.analyser.rffitrace,self.analyser.rffatrace,self.AControl.t0,self.AControl.tmax,save_directory)
     
         self.sb.show()
     
@@ -544,7 +591,7 @@ class AnalyserPanel(QWidget):
 
         
         save_directory = self.video_directory
-        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.AControl.t0,self.AControl.tmax,save_directory,self.analyser.videopath)
+        self.sb = SaveBox(labelled_traps,self.analyser.bg_sub_intensity_trace,self.analyser.bg_sub_firstintensity_trace,self.analyser.filtered_intensity_trace,self.analyser.filtered_first_intensity_trace,self.analyser.areatrace,self.analyser.firstareatrace,self.analyser.filtered_areatrace,self.analyser.filtered_firstareatrace,self.analyser.centres,self.analyser.firstcentres,self.analyser.rffitrace,self.analyser.rffatrace,self.AControl.t0,self.AControl.tmax,save_directory,self.analyser.videopath)
         self.sb.autosave()
                 
         self.sb = None
@@ -854,7 +901,7 @@ class AnalyserPanel(QWidget):
             
             self.run_just_analysis()
             
-            self.remove_vesicles_which_moved()
+            self.remove_vesicles_which_moved(self.analyser.filtered_first_intensity_trace)
             
             self.save_data_btn.clicked.connect(self.save_data)
             
@@ -866,12 +913,13 @@ class AnalyserPanel(QWidget):
             self.msgbox.show()
 
 
-    def remove_vesicles_which_moved(self):
+    '''def remove_vesicles_which_moved(self):
         
         print('Current start frame value , ' , self.AControl.t0selector.currentText())
         
         kill_labels = subtract_moved_vesicles(self,self.analyser.frames,int(self.AControl.t0selector.currentText()),self.analyser.trapgetter.trap_positions,self.analyser.trapgetter.labels)
         
+        print(kill_labels)
         if kill_labels.shape[0] == 0:
             print('No vesicles were found to have moved')
             return
@@ -901,7 +949,7 @@ class AnalyserPanel(QWidget):
                 
         self.analyser.trapgetter.labels = self.analyser.trapgetter.labels[np.searchsorted(self.analyser.trapgetter.labels,kill_labels)]
         self.analyser.trapgetter.trap_positions = self.analyser.trapgetter.trap_positions[np.searchsorted(self.analyser.trapgetter.labels,kill_labels)]
-        
+    '''    
 
     def view_kernel(self):
     
