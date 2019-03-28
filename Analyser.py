@@ -110,7 +110,7 @@ class Analyser(object):
         frames = tf.TiffFile(self.videopath)
         
         try:
-            videolength = frames.imagej_metadata[frames']
+            videolength = frames.imagej_metadata['frames']
         except:
             videolength = None
             
@@ -306,10 +306,18 @@ class Analyser(object):
 
 
             self.clips = frame.flatten().T*self.activemask
+            if counter == 0:
+                # once the classifier has identified what it believes are the only boxes with vesicles inside at t0 the fates of these boxes are sealed. The contents of these boxes will be passed to the thresholding function and a potential vesicle centre identified. This is done in parallel and independently of the intensities recorded within the process which reclassifies the box contents in every frame.
 
+
+
+
+                self.firstactivemask = self.activemask
+                self.firstactivelabels = self.active_labels
 
             if self.clips.shape[0] == 0:
-                    
+                
+                
                 self.firstactiveclips = frame.flatten().T*self.firstactivemask
                 self.firstactiveclips = self.firstactiveclips[self.firstactiveclips > 0].reshape(self.firstactiveclips.shape[0],31,31)
             
@@ -323,14 +331,7 @@ class Analyser(object):
             
             
             self.clips = self.clips[self.clips >0].reshape(self.clips.shape[0],31,31)
-            if counter == 0:
-                # once the classifier has identified what it believes are the only boxes with vesicles inside at t0 the fates of these boxes are sealed. The contents of these boxes will be passed to the thresholding function and a potential vesicle centre identified. This is done in parallel and independently of the intensities recorded within the process which reclassifies the box contents in every frame.
 
-
-
-
-                self.firstactivemask = self.activemask
-                self.firstactivelabels = self.active_labels
 
 
 

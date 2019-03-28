@@ -1023,7 +1023,7 @@ class AnalyserPanel(QWidget):
                 else:
                     print('made it to calling analyser get traps')
                     print('t0 is equal to ',t0)
-                    traps,labels = self.analyser.get_traps(t0)
+                    traps,labels = self.analyser.get_traps(self.bgf.peak_begin_frame)
                 
                 #Once traps have been successfully found, make them available for display on video view
                 

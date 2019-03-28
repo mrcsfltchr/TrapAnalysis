@@ -62,13 +62,22 @@ class TrapGetter(object):
         
 
         distance_map = distance_transform_edt(mask)
-        
 
+        
         peaks = peak_local_max(distance_map,threshold_abs=5,min_distance=4)
     
         
         self.trap_positions = np.array(peaks)
+        plt.figure()
+        plt.subplot(131)
+        plt.imshow(frame)
+        plt.subplot(132)
+        plt.imshow(mask)
+        plt.subplot(133)
+        plt.imshow(distance_map,zorder =1 )
+        plt.scatter(peaks[:,1],peaks[:,0],marker = '+', s= 3, c = 'r',zorder = 2)
         
+        plt.show()        
         print('First sight of traps counted ', self.trap_positions.shape[0])
         
     
