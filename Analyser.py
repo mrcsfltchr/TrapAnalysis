@@ -110,7 +110,7 @@ class Analyser(object):
         frames = tf.TiffFile(self.videopath)
         
         try:
-            videolength = frames.imagej_metadata['frames']
+            videolength = frames.imagej_metadata[frames']
         except:
             videolength = None
             
@@ -122,6 +122,7 @@ class Analyser(object):
 
     def get_traps(self,drug_start_frame, alternateframe = None,alternateframe_index = None, threshold = None):
         
+        print(drug_start_frame)
 
         #drug_start_frame is the index of the frame in which drug arrives. If an alternateframe is supplied, the index of it must also be supplied. This is compared to the drug_start_frame index. If it is larger we then don't determine a new threshold to binarise the alternate frame as we assume drug has arrived. When drug has arrived otsu's thresholding will fail.
         if self.frames is not None and alternateframe is None:
@@ -152,10 +153,15 @@ class Analyser(object):
             
         traps,labels = self.trapgetter.remove_duplicates()
 
+        if self.videopath.find('Pos')+3 == '0':
+            self.analyser.videopos = '9'
+        else:    
+            self.videopos = self.videopath[self.videopath.find('Pos')+3]
+        print(self.videopos)
         prelabels = int(self.videopos) * np.ones(labels.shape).astype(int)
         prelabels = prelabels.astype(str)
         labels = labels.astype(str)
-        
+        print(labels.shape[0])
         labels = add(prelabels,labels)
         
         labels = labels.astype(int)

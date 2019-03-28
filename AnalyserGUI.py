@@ -999,7 +999,7 @@ class AnalyserPanel(QWidget):
         else:
             t0 = self.bgf.peak_max_arg
             
-            print('t0 is equal to the peak max index')
+            print(t0 ,'is equal to the peak max index')
             
             self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
             file = open(os.getcwd() +'/Experimentalflowrates.csv','w')

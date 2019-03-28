@@ -69,6 +69,7 @@ class TrapGetter(object):
         
         self.trap_positions = np.array(peaks)
         
+        print('First sight of traps counted ', self.trap_positions.shape[0])
         
     
     def get_trap_positions(self,frame):
@@ -119,7 +120,7 @@ class TrapGetter(object):
         
         self.labels = np.arange(1,self.trap_positions.shape[0]+1)
             
-        
+        print('after removing the duplicates we find ',self.trap_positions.shape[0])
 
 
         return self.trap_positions,self.labels
