@@ -47,10 +47,10 @@ class TrapGetter(object):
         self.kernel_path = path
     
     
-    def get_vesicle_positions(self,frame,postdetection = False, threshold = None):
+    def get_vesicle_positions(self,frame,override_otsu = False, threshold = None):
         self.frame = frame
         frame = gaussian(frame,2,preserve_range=True)
-        if not postdetection:
+        if not override_otsu:
             self.threshold = threshold_otsu(frame)
         
         if threshold is not None:
@@ -60,7 +60,14 @@ class TrapGetter(object):
         mask = np.zeros_like(frame)
         mask[frame > self.threshold] = 1
         
-
+        print( mask[mask!=0].shape[0],mask[mask==0].shape[0] )
+        if mask[mask!=0].shape[0] > mask[mask==0].shape[0]:
+            self.threshold = np.average(frame)+ 4*np.std(frame)
+            
+        print(self.threshold)
+        mask = np.zeros_like(frame)
+        mask[frame > self.threshold] = 1
+        
         distance_map = distance_transform_edt(mask)
 
         
@@ -68,6 +75,7 @@ class TrapGetter(object):
     
         
         self.trap_positions = np.array(peaks)
+        
         plt.figure()
         plt.subplot(131)
         plt.imshow(frame)
@@ -77,7 +85,8 @@ class TrapGetter(object):
         plt.imshow(distance_map,zorder =1 )
         plt.scatter(peaks[:,1],peaks[:,0],marker = '+', s= 3, c = 'r',zorder = 2)
         
-        plt.show()        
+        plt.show()   
+        
         print('First sight of traps counted ', self.trap_positions.shape[0])
         
     
