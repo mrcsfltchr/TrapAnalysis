@@ -14,7 +14,9 @@ def get_video_paths(dir_path):
     #new subdirectories in this directory to organise the files.
     
     initial_dir = os.getcwd()
+    print(initial_dir)
     try:
+        print('dirpath: ' , dir_path)
         os.chdir(dir_path)
     except FileNotFoundError:
         print('Alert! File path does not exist, please try again')

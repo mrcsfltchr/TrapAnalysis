@@ -39,17 +39,17 @@ class MW(QtWidgets.QMainWindow):
 
     close_signal = pyqtSignal()
     
-    def __init__(self,mode = 'standard'):
+    def __init__(self,mode = 'standard', headless= False):
         
         #mode can be 'standard' or 'enhanced' atm.
         QtWidgets.QMainWindow.__init__(self)
         
         
         if mode == 'directional':
-            self.ap = AnalyserPanel(mode = 'directional')
+            self.ap = AnalyserPanel(mode = 'directional', headless = headless)
         
         else:
-            self.ap = AnalyserPanel()
+            self.ap = AnalyserPanel(headless = headless)
         
         
         self.setCentralWidget(self.ap)
@@ -67,9 +67,10 @@ class AnalyserPanel(QWidget):
     trap_on_sig = pyqtSignal()
     close_path_input_sig = pyqtSignal()
     
-    def __init__(self,mode = 'standard'):
+    def __init__(self,mode = 'standard', headless = False):
         QWidget.__init__(self)
         
+        self.headless = headless
         
         #add button to trigger auto run
         self.autorunstart = QtWidgets.QPushButton('Run Auto')
@@ -156,7 +157,7 @@ class AnalyserPanel(QWidget):
         
         #Add run analysis control, which also contains choice boxes to set the beginning and end of the experiment in the video
         
-        self.AControl = AnalysisLauncher()
+        self.AControl = AnalysisLauncher(headless = self.headless)
         self.AControl.donesig.connect(self.pre_flight_check)
         self.AControl.multidonesig.connect(self.pre_flight_check)
         
@@ -228,12 +229,13 @@ class AnalyserPanel(QWidget):
         #first disconnect the interruptions during the analysis.
         
         self.AControl.t0selector.currentTextChanged.disconnect(self.AControl.override_check)
-              
+        print(self.list_dir)
         ret, self.dir_path_list, self.save_dir_path,self.network_dir = get_video_paths(self.list_dir)
 
         
             
-        if not ret == 0:
+        print(self.headless)
+        if not ret == 0 and not self.headless:
             self.msgbox.setText('Analysis has found file names which are not .ome.tif files, do you want to continue?')
             self.msgbox.exec_()
             
@@ -654,13 +656,14 @@ class AnalyserPanel(QWidget):
         self.analyser.videopath = self.loadbox.pathshower.text()
         
     
-    def monitorprocess(self):
+    def monitorprocess(self,):
     
     
     
         print(self.mythread.isRunning())
-        self.msgbox.setText('Video Successfully Loaded!')
-        self.msgbox.exec_()
+        if not self.headless:
+            self.msgbox.setText('Video Successfully Loaded!')
+            self.msgbox.exec_()
         
         self.vid_control.showdisplay.clicked.connect(self.load_display)
         self.vid_control.withtraps_switch.clicked.connect(self.turn_on_traps)
@@ -1033,9 +1036,11 @@ class AnalyserPanel(QWidget):
             
             except Exception as e:
                 print(e)
-                
-                self.msgbox.setText('Getting traps failed. Check Kernel, and that the visibility of the traps in the\n last frame is good')
-                self.msgbox.show()
+                if self.headless:
+                    print('Getting traps failed. Check Kernel, and that the visibility of the traps in the\n last frame is good')
+                else:
+                    self.msgbox.setText('Getting traps failed. Check Kernel, and that the visibility of the traps in the\n last frame is good')
+                    self.msgbox.show()
         return t0
             
 
@@ -1441,6 +1446,12 @@ def isTiff(path):
             
 if __name__ == '__main__':
     
+    headless = False
+    if len(sys.argv) ==2:
+        headless = True
+        videodir = sys.argv[1]
+    
+        
     if not QtWidgets.QApplication.instance():
         app = QtWidgets.QApplication(sys.argv)
         
@@ -1451,9 +1462,14 @@ if __name__ == '__main__':
 
 
 
-    mw = MW(mode = 'directional')
+    mw = MW(mode = 'directional', headless = headless)
 
+
+    
     mw.close_signal.connect(app.closeAllWindows)
+
+    mw.ap.listdir = videodir
+    mw.ap.autostart_pressed()
+    mw.ap.autolaunch.enter_dir_path.setText(videodir)
+    mw.ap.getfilepathandclose()
     app.exec_()
-
-

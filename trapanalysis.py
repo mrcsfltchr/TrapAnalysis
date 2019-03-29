@@ -75,7 +75,7 @@ class TrapGetter(object):
     
         
         self.trap_positions = np.array(peaks)
-        
+        '''
         plt.figure()
         plt.subplot(131)
         plt.imshow(frame)
@@ -86,7 +86,7 @@ class TrapGetter(object):
         plt.scatter(peaks[:,1],peaks[:,0],marker = '+', s= 3, c = 'r',zorder = 2)
         
         plt.show()   
-        
+        '''
         print('First sight of traps counted ', self.trap_positions.shape[0])
         
     

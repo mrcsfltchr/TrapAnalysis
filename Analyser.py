@@ -219,6 +219,7 @@ class Analyser(object):
 
             try:
                 clip[self.rectangle(start = trap-[self.trapgetter.topboxrel,self.trapgetter.leftboxrel],end = trap +[self.trapgetter.bottomboxrel,self.trapgetter.rightboxrel])[0],self.rectangle(start = trap-[self.trapgetter.topboxrel,self.trapgetter.leftboxrel],end = trap +[self.trapgetter.bottomboxrel,self.trapgetter.rightboxrel])[1]]=1
+                print('after fitting rectangle ',clip.shape[0])
             except:
                 #if clip cannot be made, for example if the trap centre is too close to the edge of the frame that a rectangle box of the defined size cannot be extracted from the image. Rather than handle this by changing the box size automatically, we just bin the boxes that are too close to the edge.
 
@@ -239,9 +240,10 @@ class Analyser(object):
                 self.mask = clip.flatten()
 
 
-
+        
         print("mask has shape, ",self.mask.shape[0])
-
+        if self.mask.shape[0] == 512*512:
+            self.mask = self.mask.reshape(1,512*512)
     def sett0frame(self,frameno):
 
         self.t0frameNo = int(frameno)

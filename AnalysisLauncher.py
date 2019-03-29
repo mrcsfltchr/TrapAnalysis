@@ -13,10 +13,10 @@ class AnalysisLauncher(QtWidgets.QWidget):
     donesig = pyqtSignal()
     multidonesig = pyqtSignal()
     
-    def __init__(self,frames = None):
+    def __init__(self,frames = None, headless= False):
         QtWidgets.QWidget.__init__(self)
         
-
+        self.headless = headless
         self.msgbox = QtWidgets.QMessageBox()
         self.override_warning = OverrideWarningBox()
         self.has_been_overriden = False
@@ -105,13 +105,16 @@ class AnalysisLauncher(QtWidgets.QWidget):
 
             self.tmax = int(self.tmaxselector.currentText())
         except ValueError:
-            self.msgbox.setText('Select Valid Frame No.s')
-            self.msgbox.show()
+            if self.headless:
+                print('select Valid Frame No.s')
+            else:
+                self.msgbox.setText('Select Valid Frame No.s')
+                self.msgbox.show()
 
 
     def override_check(self):
 
-        if self.has_been_overriden:
+        if self.has_been_overriden and not self.headless:
             self.override_warning.exec_()
 
         else:
