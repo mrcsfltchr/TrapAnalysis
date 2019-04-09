@@ -295,6 +295,8 @@ class AnalyserPanel(QWidget):
 
             self.auto_save_data()
                 
+        if self.headless:
+            sys.exit()
             
        
     def remove_vesicles_which_moved(self,dictionary,threshold = -0.07,frames =None):
@@ -1467,9 +1469,9 @@ if __name__ == '__main__':
 
     
     mw.close_signal.connect(app.closeAllWindows)
-
-    mw.ap.listdir = videodir
-    mw.ap.autostart_pressed()
-    mw.ap.autolaunch.enter_dir_path.setText(videodir)
-    mw.ap.getfilepathandclose()
+    if headless:
+        mw.ap.listdir = videodir
+        mw.ap.autostart_pressed()
+        mw.ap.autolaunch.enter_dir_path.setText(videodir)
+        mw.ap.getfilepathandclose()
     app.exec_()

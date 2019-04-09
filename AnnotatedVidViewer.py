@@ -31,7 +31,7 @@ class  TrapViewer(QWidget):
         self.videobox.activeframe = images.asarray(key = TrapViewer.i)
         try:
             self.videobox.maxintens = int(images.imagej_metadata['max'])
-            self.videobox.maxintens = 2000
+            self.videobox.maxintens = 15265
             print(images.imagej_metadata)
         except KeyError:
             self.videobox.maxintens =int(np.max(self.videobox.activeframe))
