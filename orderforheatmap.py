@@ -91,7 +91,7 @@ if __name__ == '__main__':
     
     labels = np.delete(labels,indices_to_remove)
     
-    data = np.vstack((labels[np.argsort(lifetimes)[::-1]],data[:,np.argsort(lifetimes)][::-1])) 
+    data = np.vstack((labels[np.argsort(lifetimes)[::-1]],data[:,np.argsort(lifetimes)[::-1]])) 
     columns = np.concatenate((['frame'],columns))   
     print(columns.shape)
     print(data.shape)        
