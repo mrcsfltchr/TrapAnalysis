@@ -12,56 +12,50 @@ import os
 from glob import glob
 import sys
 
-
-
-def sort_df(df,filepath,twodigitflag=False):
+def get_unique_id_prefix(filename):
     
-    dictionary = df.to_dict('list')
-    if list(dictionary.keys())[0][:3] == 'Unn':
-        dictionary.pop[list(dictionary.keys())[0]]
+    integer = filename[filename.find('Pos') + 3]
     
-    if len(list(dictionary.keys())[0]) ==1:
-        dictionary = append0tokeys(dictionary)
-    if twodigitflag:
-        dictionary = append2ndfigtokeys(filepath,dictionary)
-        
-    print(dictionary.keys())
-    '''for key in dictionary.keys():
-            
-        dictionary[key].sort(reverse=True)
-    ''' 
-    
-    df = pd.DataFrame.from_dict(dictionary)
-    return df
-
-def append0tokeys(dictionary):
-    
-    dictionary2 = {}
-    
-    for key in list(dictionary.keys()):
-        dictionary2['0'+key] = dictionary.pop(key)
-        
-    return dictionary2
-    
-def append2ndfigtokeys(file_path,dictionary):
-    
-    index = file_path.find('Pos') +4
     try:
-        int(file_path[index])
-    except:
-        return dictionary
+        integer = int(integer)
+        
+
+            
+    except ValueError:
+        print('Check if the file path is correct, this code assumes that the filepath is of the form ...PosN.. where N is a valid integer')
     
+    #check if next character is also an integer    
+    nextdigit = filename[filename.find('Pos') + 4] 
+        
+    try:
+        nextdigit = int(nextdigit)
+        
+        #if there are two digits, we could have 00 0N or NM where N,M are single digit integers
+        key_to_append = str(integer)+str(nextdigit)
+        
+    except ValueError:
+        #if next character can't be made to an integer we must only have one integer present. Now we know this we have to append a 0 to the front to make it a unique id
+        
+        key_to_append = '0'+str(integer)
+        
+    #if there are two digits, we could have 00 0N or NM where N,M are single digit integers
+
+    
+    return key_to_append
+
+
+
+def create_unique_id(dictionary,keytoappend):
     
     dictionary2 = {}
     
     for key in list(dictionary.keys()):
-        if file_path[file_path.find('Pos')+3] == '0':
-            dictionary2['0'+key] = dictionary.pop(key)
-        else:    
-            dictionary2[key[0]+str(file_path[index])+key[1:]] = dictionary.pop(key)
-        
-    return dictionary2
-
+        dictionary2[keytoappend+key] = dictionary.pop(key)
+    
+    
+    df = pd.DataFrame.from_dict(dictionary2)
+    return df  
+    
 if __name__ == '__main__':
     
     if len(sys.argv) >3:
@@ -82,38 +76,30 @@ if __name__ == '__main__':
     
     intensity_files = glob(file_pattern)
     print(intensity_files)
-    ndigit = intensity_files[0][intensity_files[0].find('Pos') + 4]
-        
-    try:
-        int(ndigit)
-        print(int(ndigit))
-        twodigitflag = True
-    except ValueError:
-        twodigitflag = False
 
+    
+    key_to_append = get_unique_id_prefix(intensity_files[0])  
+    
     all_data = pd.read_csv(intensity_files[0])
     
     all_data = all_data.drop('Unnamed: 0',1)
+    print(all_data.keys())
+    all_data = create_unique_id(all_data,key_to_append)
     
-    
-    all_data = sort_df(all_data,intensity_files[0],twodigitflag)
+    #DEPRECATED: all_data = sort_df(all_data,intensity_files[0],twodigitflag)
+
     for file in intensity_files[1:]:
-        print(file)
-        ndigit = file[file.find('Pos') + 4]
-        
-        try:
-            int(ndigit)
-            print(ndigit)
-            twodigitflag = True
-        except ValueError:
-            twodigitflag = False
+
+
+        key_to_append = get_unique_id_prefix(file)
         
         
         df = pd.read_csv(file)
         df= df.drop('Unnamed: 0',1)
+        temp_dict = df.to_dict()
         
-
-        df = sort_df(df,file,twodigitflag)
+        df= create_unique_id(temp_dict,key_to_append)
+        print(all_data.keys())
         all_data = all_data.join(df)
         
         

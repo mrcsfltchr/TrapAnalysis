@@ -63,7 +63,7 @@ class TrapGetter(object):
         print( mask[mask!=0].shape[0],mask[mask==0].shape[0] )
         if mask[mask!=0].shape[0] > mask[mask==0].shape[0]:
             self.threshold = np.average(frame)+ 4*np.std(frame)
-            
+            print('Otsu threshold failed, has been overriden')
         print(self.threshold)
         mask = np.zeros_like(frame)
         mask[frame > self.threshold] = 1

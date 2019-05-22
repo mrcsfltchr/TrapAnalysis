@@ -38,9 +38,9 @@ class BackgroundFinder(object):
         #the peak value of this largest peak is taken as the time at which the concentration of the drug is half of its final concentration
         
         
-        peak_max_val = -1
-        peak_max_arg = 0
-
+        self.peak_max_val = -1
+        self.peak_max_arg = 0
+        self.peak_begin_frame = 0
         for i in range(5,30,5):
             tic = time.time()
             gradient = gaussian(self.gradient[:-100],i)
@@ -50,9 +50,9 @@ class BackgroundFinder(object):
             
             new_peak_arg = np.argmax(gradient)
             
-            if new_peak_val > peak_max_val:
-                peak_max_val = new_peak_val
-                peak_max_arg = new_peak_arg
+            if new_peak_val > self.peak_max_val:
+                self.peak_max_val = new_peak_val
+                self.peak_max_arg = new_peak_arg
                 self.width = i
             toc = time.time()
            
@@ -62,7 +62,7 @@ class BackgroundFinder(object):
         
         
         delta = 0
-        grad_peak2firstval = self.gradient[:peak_max_arg][::-1]
+        grad_peak2firstval = self.gradient[:self.peak_max_arg][::-1]
         
         for num in range(grad_peak2firstval.shape[0]-1):
             newdelta = grad_peak2firstval[num+1]-grad_peak2firstval[num]
@@ -73,8 +73,8 @@ class BackgroundFinder(object):
                 
                 firstmin = num
 
-                self.peak_begin_frame = peak_max_arg - firstmin
-                self.peak_max_arg = peak_max_arg
+                self.peak_begin_frame = self.peak_max_arg - firstmin
+                
                 
                 return 
 

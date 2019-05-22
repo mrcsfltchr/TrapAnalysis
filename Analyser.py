@@ -438,7 +438,7 @@ class Analyser(object):
         markers = markers +1
         markers[unknown==255] = 0
         clip = clip.reshape(31,31)
-        clip = smooth(clip,sigma = 1)
+        clip = smooth(clip,sigma =1)
         
 
         nclip = cv2.normalize(src=clip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
@@ -519,7 +519,7 @@ class Analyser(object):
                 
                         self.firstareatrace[str(label)].append(eccentricity)
                         #self.areatrace[str(label)].append(self.extract_area(testclip,kernel,clip))
-                        self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],0.5)
+                        self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],3)
         
                         self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
                     except KeyError:
@@ -528,7 +528,7 @@ class Analyser(object):
                 
                         self.firstareatrace[str(label)]=[eccentricity]                       
                         #self.areatrace[str(label)] = [self.extract_area(testclip,kernel,clip)]
-                        self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],0.5)
+                        self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],3)
                         self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
         
         
@@ -607,7 +607,7 @@ class Analyser(object):
                 
                 self.firstareatrace[str(label)].append(eccentricity)            
                 self.areatrace[str(label)].append(self.extract_area(testclip,kernel,firstclip))
-                self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],0.5)
+                self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],3)
 
                 self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
@@ -616,7 +616,7 @@ class Analyser(object):
                 self.areatrace[str(label)] = [self.extract_area(testclip,kernel,firstclip)]
                 self.firstareatrace[str(label)]= [eccentricity]
                 
-                self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],0.5)
+                self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],3)
                 self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 
 
@@ -734,12 +734,12 @@ class Analyser(object):
 
             
             self.firstareatrace[str(label)].append(eccentricity)
-            self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],0.5)
+            self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],3)
 
             self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
         except KeyError:
             self.firstareatrace[str(label)] = [eccentricity]
-            self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],0.5)
+            self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],3)
             self.firstsecondintensitytrace[str(label)] = [np.average(img[img>0])]
 
     def delete_vesicle(self,label_as_str):
@@ -831,7 +831,7 @@ class Analyser(object):
         self.ls = livestream(qnd,video[t0:tmax],annotations_on = annotations,annotate_coords = self.centres[str(label)])
 
 
-    def subtract_background(self,sigma = 0.5):
+    def subtract_background(self,sigma = 3):
 
         for key in self.firstintensitytrace.keys():
 

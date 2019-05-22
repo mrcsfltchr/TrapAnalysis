@@ -274,7 +274,9 @@ class AnalyserPanel(QWidget):
                 continue
             
             os.chdir(self.network_dir)
-            self.get_traps()
+            traps, labels = self.get_traps()
+            if traps.shape[0] == 0:
+                continue
             
 
                         
@@ -282,7 +284,7 @@ class AnalyserPanel(QWidget):
             t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
             self.AControl.t0selector.setCurrentText(str(t0))
             
-            tmax = t0 +1200
+            tmax = t0 +600
             if tmax > self.analyser.videolength:
                 self.AControl.tmaxselector.setCurrentText(str(self.analyser.videolength - 1))
             else:
@@ -1003,24 +1005,31 @@ class AnalyserPanel(QWidget):
         
         else:
             t0 = self.bgf.peak_max_arg
-            
+            if t0 == 0:
+                print('t0 is 0 so automatic detection of increase in background intensity has failed')
+                
             print(t0 ,'is equal to the peak max index')
             
             self.AControl.t0selector.setCurrentText(str(self.bgf.peak_max_arg))
             file = open(os.getcwd() +'/Experimentalflowrates.csv','w')
-
-            flow_rate = np.average(self.bgf.gradient[int(self.bgf.peak_begin_frame):int(2*self.bgf.peak_max_arg - self.bgf.peak_begin_frame)])
             
+            if self.bgf.peak_begin_frame:
+                
+                flow_rate = np.average(self.bgf.gradient[int(self.bgf.peak_begin_frame):int(2*self.bgf.peak_max_arg - self.bgf.peak_begin_frame)])
+                file.write(self.analyser.videopath + str(flow_rate)+',')
             
 
-            file.write(self.analyser.videopath + str(flow_rate)+',')
             
-
+            else:
+                print("Can't determine flow rate as background intensity rise has not been found")
+            
             file.close()
+
         self.AControl.update()
         self.AControl.override_warning.rejected.connect(self.no_manual_override)
         
-        
+        traps = np.array([])
+        labels = np.array([])
         if self.has_frames:
             try:
                 if multividflag:
@@ -1043,7 +1052,7 @@ class AnalyserPanel(QWidget):
                 else:
                     self.msgbox.setText('Getting traps failed. Check Kernel, and that the visibility of the traps in the\n last frame is good')
                     self.msgbox.show()
-        return t0
+        return traps, labels
             
 
     def create_persisting_times(self):

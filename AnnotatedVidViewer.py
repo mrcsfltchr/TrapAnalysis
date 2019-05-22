@@ -50,7 +50,7 @@ class  TrapViewer(QWidget):
         self.sl = QSlider(Qt.Horizontal)
         
         self.sl.setMinimum(0.0)
-        self.sl.setMaximum(self.video.imagej_metadata['frames'])
+        self.sl.setMaximum(self.video.imagej_metadata['frames']-1)
         
         self.sl.setTickPosition(QSlider.TicksAbove)
         self.sl.setTracking(True)
@@ -99,7 +99,9 @@ class  TrapViewer(QWidget):
         
         self.frame_counter.setValue(float(TrapViewer.i))
         
-        TrapViewer.i+=1
+        if TrapViewer.i < self.video.imagej_metadata['frames']:
+            
+            TrapViewer.i+=1
        
     def whenslidechanges(self):
         
