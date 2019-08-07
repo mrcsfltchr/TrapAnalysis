@@ -11,6 +11,7 @@ import numpy as np
 import sys
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d as smooth
+from scipy.optimize import curve_fit
 
 '''def findMaxBurstingRate(data,halfIntensityPoints,window_size = 4):
     
@@ -92,13 +93,48 @@ from scipy.ndimage import gaussian_filter1d as smooth
  
 '''
 
+def e(x,A,tau,C):
+    exponent = (-x)/tau
+    
+    return A*np.exp(exponent) +C
 
-def findMaxBurstingRate(data, halfIntensityPoints,window = 200):
+def get_time_constant(data,start,end):
+    
+    if end-start < 3:
+        ret = -1
+        params = None
+    else:
+        ret = 1
+        xdata = np.arange(end-start)
+        ydata = data[start:end]
+
+        print('This is max value in data,', np.nanmax(data))
+        
+        try:
+            params = curve_fit(e,xdata,ydata,p0=[ydata[0],0.6*(end-start),ydata[-1]])
+        except RuntimeError:
+            #if np.log10(params[0][0]) > 1.5:
+             #   ret = -1
+                
+            ret = -1
+            params = None
+        #xfit = np.linspace(0,xdata.shape[0],50)
+        #yfit = e(xfit,A=params[0][0],tau=params[0][1],C=params[0][2])
+        #plt.figure()
+        #plt.plot(xdata,ydata)
+        #plt.plot(xfit,yfit)
+        #plt.title(str(params[0][0]) + ',' +str(params[0][1]) +' '+str(params[0][2]))
+        #plt.show()
+        print('params is ',params)
+    return params, ret
+    
+
+def findMaxBurstingRate(data, halfIntensityPoints,window = 100):
 
     upperlimit = int(window/2)
     lowerlimit = int(window/2)
-    print(halfIntensityPoints)
-    fig = plt.figure()
+
+
     avrates = []
     lifetimes = []
     for i in range(0,halfIntensityPoints.shape[0]):
@@ -123,6 +159,7 @@ def findMaxBurstingRate(data, halfIntensityPoints,window = 200):
         section = data[(halfIntensityPoints[i]-lowerlimit):(halfIntensityPoints[i]+upperlimit),i]
         
         if section.shape[0] == 0:
+            
             continue
         
         plt.subplot(211)
@@ -168,7 +205,7 @@ def findMaxBurstingRate(data, halfIntensityPoints,window = 200):
                     
                     
                     
-        print(leakage_period)
+
         if leakage_period == 0:
             continue
         
@@ -178,12 +215,12 @@ def findMaxBurstingRate(data, halfIntensityPoints,window = 200):
     return avrates, lifetimes
         
 
-def findDescendingRegion(data, halfIntensityPoints,window = 300):       
+def findDescendingRegion(data, halfIntensityPoints,window = 1000):    
      
     upperlimit = int(window/2)
     lowerlimit = int(window/2)
-    print(halfIntensityPoints)
-    fig = plt.figure()
+
+    
     avrates = []
     lifetimes = []
     
@@ -199,6 +236,7 @@ def findDescendingRegion(data, halfIntensityPoints,window = 300):
             continue
         
         if lowerlimit > halfIntensityPoints[i]:
+            print(lowerlimit)
             lowerlimit = halfIntensityPoints[i]
         if upperlimit > data[:,i].shape[0] - halfIntensityPoints[i]:
             upperlimit = data[:,i].shape[0] - halfIntensityPoints[i]
@@ -208,16 +246,21 @@ def findDescendingRegion(data, halfIntensityPoints,window = 300):
             
 
         section = data[(halfIntensityPoints[i]-lowerlimit):(halfIntensityPoints[i]+upperlimit),i]
-        
+
         if section.shape[0] == 0:
             continue
         
 
         
+        smoothed_section = smooth(section,3)
+        
         rates = np.gradient(section)
         
         
+        
         if np.average(rates) > 0:
+            print('This is the average gradient', np.average(rates))
+            
             continue
         
 
@@ -229,18 +272,23 @@ def findDescendingRegion(data, halfIntensityPoints,window = 300):
         else:
             maximum = maximum[0][0]
         
-        
+
         section = section[maximum:]
-        start = np.argwhere(section < 0.85)
+        start = np.argwhere(section < 0.95*section[0])
         if start.shape[0] == 0:
+            print('went wrong at start')
             continue
         else:
             start = start[0][0]
         if start == section.shape[0]:
+            
             continue
 
             
-        end = np.argwhere(section[start:] < 0.1)
+        end = np.argwhere(section[start:] < 0.5*section[0])
+        if end.shape[0] == 0:
+            end = section.shape[0]
+        
         if end.shape[0] == 0:
             continue
         else:
@@ -248,14 +296,22 @@ def findDescendingRegion(data, halfIntensityPoints,window = 300):
 
 
         
-        backtrace = section[:end][::-1][section[:end][::-1] > 0.85]
-        if backtrace.shape[0] > 0:
+        #backtrace = section[:end][::-1][section[:end][::-1] > 0.95]
+        #if backtrace.shape[0] > 0:
             
-            start = end - np.argwhere(section[:end][::-1] == backtrace[0])[0][0] -1 
-        
-        print(start,end)
+          #  start = end - np.argwhere(section[:end][::-1] == backtrace[0])[0][0] -1 
+        #
 
-        avrates.append(end-start)
+        #fit exponential to this region of the intensity trace and then take time constant
+        
+        parameters, success = get_time_constant(section,start,end)
+        if success ==1:
+            time_constant = parameters[0][1]
+            error = parameters[1][1,1]
+        else:
+            time_constant = end-start
+            error = 0
+        avrates.append([time_constant,error])
         lifetimes.append(halfIntensityPoints[i])
                 
     return avrates, lifetimes
@@ -283,35 +339,48 @@ if __name__ == '__main__':
         
         sys.exit()
     
-    df = pd.read_csv(dpath + fpath)
+    df = pd.read_csv(dpath + '/'+fpath)
     
     intensity_traces = df.to_numpy()
-
-        
-    intensity_traces = intensity_traces[:,1:]
     
+
+    intensity_traces = intensity_traces[3:,3:]
+ 
+    intensity_traces= intensity_traces.astype(float)
     
     
     if normalise:
-        maxes = np.nanmax(intensity_traces,axis = 0)
+        #maxes = np.nanmax(intensity_traces,axis = 0)
         
-        print(maxes)
-        intensity_traces = intensity_traces/maxes
+        
+        #mins = np.nanmin(intensity_traces,axis = 0)
+        #intensity_traces =(intensity_traces - mins)
+        #intensity_traces = intensity_traces/maxes
+        
+        for i in range(intensity_traces.shape[1]):
+            
+            maxe = np.nanmax(intensity_traces[:,i])
+            mine = np.nanmin(intensity_traces[:,i])
+            
+            intensity_traces[:,i] = intensity_traces[:,i]/maxe
+
         for i in range(0,intensity_traces.shape[1]):
             intensity_traces[:,i] = smooth(intensity_traces[:,i],0.3)
            
     
     lifetimes = np.nansum(intensity_traces > 0.5,axis = 0)
-    
-    print(intensity_traces[lifetimes-1])
+
     
     
     av_rates, finallifetimes = findDescendingRegion(intensity_traces,lifetimes)
     
     np.savetxt(dpath + outpath,np.array(av_rates),delimiter = ',')
     
+    av_rates = np.array(av_rates)
     dictionary = {}
-    dictionary['rates'] = av_rates
+    dictionary['rates'] = av_rates[:,0]
+    dictionary['error'] = av_rates[:,1]
+    
     dictionary['halfintensitypoint'] = finallifetimes
     
     df3 = pd.DataFrame.from_dict(dictionary)

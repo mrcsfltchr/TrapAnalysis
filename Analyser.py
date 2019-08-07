@@ -294,7 +294,8 @@ class Analyser(object):
         if multivid:
             self.t0frameNo = 0
             maxframe = self.videolength
-
+        else:
+            self.videolength = maxframe
         print(maxframe)
         counter = 0
         for ind in range(self.t0frameNo,maxframe):
@@ -846,7 +847,9 @@ class Analyser(object):
             except KeyError :
                 continue
 
-            self.bg_sub_firstintensity_trace[key] = np.array(self.firstintensitytrace[key])-self.bgintens
+            
+            self.bg_sub_firstintensity_trace[key] = np.array(self.firstintensitytrace[key]) -self.bgintens
+            
             self.second_bg_fsi_trace[key] = np.array(self.firstsecondintensitytrace[key]) -self.bgintens
 
             self.filtered_first_intensity_trace[key] = smooth(self.bg_sub_firstintensity_trace[key],sigma)

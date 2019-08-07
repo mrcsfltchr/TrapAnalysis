@@ -281,7 +281,8 @@ class AnalyserPanel(QWidget):
 
                         
                 
-            t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
+            #t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
+            t0 = 138
             self.AControl.t0selector.setCurrentText(str(t0))
             
             tmax = t0 +600

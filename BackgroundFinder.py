@@ -23,14 +23,15 @@ class BackgroundFinder(object):
         
         self.gradient = np.gradient(normalised_gradient)
         
-        
+        return 0
+    
     def plot_gradient(self):
         
         plt.plot(self.gradient)
         plt.title('Gradient of background intensity over time')
         plt.ylabel('Gradient/a.u.')
         plt.xlabel('Frame No.')
-       
+        plt.show()
     def find_correct_gaussian_scale(self):
         
         #function convolves several gaussians with different sigma across the gradient line. 
@@ -98,11 +99,11 @@ class BackgroundFinder(object):
         
         #frames must be an array of shape, (Number of frames,Image Height, Image Width)
 
-
+        
         frames = frames_buffer.asarray()
-       
+        
         self.background_intens = np.median(frames,axis = (1,2))
-
+        
 
     def plot_background_intensity(self):
 
@@ -111,14 +112,14 @@ class BackgroundFinder(object):
 
         plt.plot(self.background_intens)
 
-        plt.xticks([10,self.background_intens.shape[0]//2,self.background_intens.shape[0]-10],labels = [5,0.5*(self.background_intens.shape[0]//2),0.5*(self.background_intens.shape[0]-10)])
+        #plt.xticks([10,self.background_intens.shape[0]//2,self.background_intens.shape[0]-10],labels = [5,0.5*(self.background_intens.shape[0]//2),0.5*(self.background_intens.shape[0]-10)])
 
         
         plt.title('Backround Intensity as drug enters the chamber')
 
         plt.ylabel('Intensity/arbitrary units')
         plt.xlabel('Time/mins')
-
+        plt.show()
 
     def normalize_data(self):
         
