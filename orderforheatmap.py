@@ -21,6 +21,10 @@ if __name__ == '__main__':
         directory = sys.argv[1]
         filepath = sys.argv[2]
         output = sys.argv[3]
+    elif len(sys.argv) == 3:
+        directory = sys.argv[1]
+        filepath = sys.argv[2]
+        output = 'output_'+filepath   
     else:
         directory = '/storage/All data- for analysis/Control/2'
         filepath  = 'collatefiltered.csv'      

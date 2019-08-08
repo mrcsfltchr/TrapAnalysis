@@ -2,7 +2,13 @@ import pandas as pd
 import numpy as np 
 import sys
 import os
+from scipy.ndimage import gaussian_filter1d as smooth
 
+def smoothdata(data,sigma=3):
+    data = data.astype(np.float)
+    for i in range(data.shape[0]):
+        data[i] = smooth(data[i],sigma)
+        return data
 def background_find_and_sub(I,axis):
 
     bg = np.nanmin(I,axis)
@@ -11,6 +17,7 @@ def background_find_and_sub(I,axis):
 
 def normalise(I,axis):
     one = np.nanmax(I,axis)
+    print(one[:,np.newaxis])
     return I/one[:,np.newaxis]
 
 
@@ -34,6 +41,7 @@ if __name__ == '__main__':
     files = files[files != 'normalised_data']
     for file in files:
         
+        print(file)
     
         database = pd.read_csv(directory+'/'+file)
 
@@ -41,10 +49,13 @@ if __name__ == '__main__':
         # each row in just_data corresponds to a single vesicle intensity time series.
         just_data = data[1:,2:].T
 
-        print(np.nanmin(just_data, axis = 1))
+        print(just_data.dtype)
+        just_data = just_data.astype(float)
+        just_data  = smoothdata(just_data)
         just_data  = background_find_and_sub(just_data, axis = 1)
         just_data = normalise(just_data, axis =1)
-
+        
+        
         
         labelled_data = np.vstack((data[0,2:],just_data.T))
         
@@ -52,7 +63,6 @@ if __name__ == '__main__':
 
         dfs = pd.DataFrame(labelled_data[1:,1:],columns = labelled_data[0,1:],index = labelled_data[1:,0])
 
-        dfs.to_csv(directory+'/normalised_data/'+file[:-4]+'_normalised.csv')
-
+        dfs.to_csv(directory+'/normalised_data/'+file[:-17]+'_normalised.csv')
         
         
