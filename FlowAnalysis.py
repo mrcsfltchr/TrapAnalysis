@@ -21,13 +21,14 @@ def get_video_paths(dir_path):
     
     initial_dir = os.getcwd()
     print(initial_dir)
+
     try:
         print('dirpath: ' , dir_path)
         os.chdir(dir_path)
     except FileNotFoundError:
         print('Alert! File path does not exist, please try again')
         ret = -1
-        return -1, None
+        return -1, None, None,None
     #next assign  video paths in the directory to a list
     
     video_filenames = os.listdir(os.getcwd())
@@ -40,14 +41,14 @@ def get_video_paths(dir_path):
     delete_indices = []
     for i in range(0,len(video_filenames)):
         file = video_filenames[i]
-        if file[-8:] != '.ome.tif' and  file[-10:] != '.ome-1.tif' and ret ==0:
+        if file[-8:] != '.ome.tif' and  file[-10:] != '.ome-1.tif':
             delete_indices.append(i)
             ret = -2
             
     video_filenames = np.array(video_filenames)
     video_filenames = np.delete(video_filenames,delete_indices)
     video_filenames = video_filenames.tolist()
-    print(video_filenames)
+    
     if len(video_filenames) == 0:
         ret = -1
             

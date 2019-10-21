@@ -6,14 +6,15 @@ from scipy.ndimage import gaussian_filter1d as smooth
 
 def smoothdata(data,sigma=3):
     data = data.astype(np.float)
+    d2 = np.zeros_like(data)
     for i in range(data.shape[0]):
-        data[i] = smooth(data[i],sigma)
-        return data
-def background_find_and_sub(I,axis):
+        d2[i] = smooth(data[i],sigma)
+    return d2
+def background_find_and_sub(I,minim):
 
-    bg = np.nanmin(I,axis)
     
-    return I - bg[:,np.newaxis]
+    
+    return I - minim
 
 def normalise(I,axis):
     one = np.nanmax(I,axis)
@@ -52,7 +53,8 @@ if __name__ == '__main__':
         print(just_data.dtype)
         just_data = just_data.astype(float)
         just_data  = smoothdata(just_data)
-        just_data  = background_find_and_sub(just_data, axis = 1)
+        minim = np.nanmin(just_data)
+        just_data  = background_find_and_sub(just_data, minim)
         just_data = normalise(just_data, axis =1)
         
         

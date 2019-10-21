@@ -80,7 +80,7 @@ if __name__ == '__main__':
         #look for presence of intensity values above 0.5 intensity in the region of the trace expected to be lower than half intensity, if we find values greater than 0.5 we delete that row
         if np.sum(expected_lessthan_half_I[5:] > 0.5) !=0:
             indices_to_remove.append(i)
-
+    print(labels[indices_to_remove])
     
     #delete the rows which are suspected to have had a second vesicle appear after the first disappears
     indices_to_remove = np.array(indices_to_remove)
