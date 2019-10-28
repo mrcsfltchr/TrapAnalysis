@@ -39,17 +39,17 @@ class MW(QtWidgets.QMainWindow):
 
     close_signal = pyqtSignal()
     
-    def __init__(self,mode = 'standard', headless= False):
+    def __init__(self,mode = 'standard', headless= False, old = False):
         
         #mode can be 'standard' or 'enhanced' atm.
         QtWidgets.QMainWindow.__init__(self)
         
         
         if mode == 'directional':
-            self.ap = AnalyserPanel(mode = 'directional', headless = headless)
+            self.ap = AnalyserPanel(mode = 'directional', headless = headless,old = old)
         
         else:
-            self.ap = AnalyserPanel(headless = headless)
+            self.ap = AnalyserPanel(headless = headless,old = old)
         
         
         self.setCentralWidget(self.ap)
@@ -67,10 +67,11 @@ class AnalyserPanel(QWidget):
     trap_on_sig = pyqtSignal()
     close_path_input_sig = pyqtSignal()
     
-    def __init__(self,mode = 'standard', headless = False):
+    def __init__(self,mode = 'standard', headless = False, old = False):
         QWidget.__init__(self)
         
         self.headless = headless
+        self.old = old
         
         #add button to trigger auto run
         self.autorunstart = QtWidgets.QPushButton('Run Auto')
@@ -285,7 +286,11 @@ class AnalyserPanel(QWidget):
             t0 = 138
             self.AControl.t0selector.setCurrentText(str(t0))
             
-            tmax = t0 +600
+            if self.old:
+                tmax = t0 + 1200
+            else:    
+                tmax = t0 +600
+            
             if tmax > self.analyser.videolength:
                 self.AControl.tmaxselector.setCurrentText(str(self.analyser.videolength - 1))
             else:
@@ -1459,10 +1464,12 @@ def isTiff(path):
 if __name__ == '__main__':
     
     headless = False
-    if len(sys.argv) ==2:
+    if len(sys.argv) >=2:
         headless = True
         videodir = sys.argv[1]
-    
+        
+    if len(sys.argv) > 2:
+        old = sys.argv[2]
         
     if not QtWidgets.QApplication.instance():
         app = QtWidgets.QApplication(sys.argv)
@@ -1474,7 +1481,7 @@ if __name__ == '__main__':
 
 
 
-    mw = MW(mode = 'directional', headless = headless)
+    mw = MW(mode = 'directional', headless = headless, old = old)
 
 
     
