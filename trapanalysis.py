@@ -71,7 +71,7 @@ class TrapGetter(object):
         distance_map = distance_transform_edt(mask)
 
         
-        peaks = peak_local_max(distance_map,threshold_abs=5,min_distance=4)
+        peaks = peak_local_max(distance_map,threshold_abs=5,min_distance=2)
     
         
         self.trap_positions = np.array(peaks)
