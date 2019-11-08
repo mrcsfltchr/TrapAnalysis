@@ -282,8 +282,8 @@ class AnalyserPanel(QWidget):
 
                         
                 
-            #t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
-            t0 = 138
+            t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
+            #t0 = 138
             self.AControl.t0selector.setCurrentText(str(t0))
             
             if self.old:
@@ -1463,6 +1463,7 @@ def isTiff(path):
             
 if __name__ == '__main__':
     
+    old = False
     headless = False
     if len(sys.argv) >=2:
         headless = True

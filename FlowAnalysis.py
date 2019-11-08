@@ -13,6 +13,9 @@ import tifffile as tf
 import sys
 from scipy.optimize import curve_fit
 import os
+from scipy.signal import find_peaks
+
+
 
 def get_video_paths(dir_path):
     
@@ -93,7 +96,7 @@ if __name__ == '__main__':
     
     #initialise dictionary to store parameters
     flow_params = {}
-    flow_params['Rows'] = ['a','b','A']
+    flow_params['Rows'] = ['Rate']
     
     BF = BackgroundFinder()
     
@@ -121,7 +124,14 @@ if __name__ == '__main__':
         BF.get_background(vid_buf)
         #BF.plot_background_intensity()
         ret = BF.get_data_gradient()
+        print(BF.gradient)
         BF.smooth_gradient()
+        print(BF.gradient)
+        
+        '''
+        
+        
+        ******** Deprecated sigmoid fitting. Realised the background intensity did not always increase in a sigmoidal shape ******
         
         if ret == -1:
             print('video background not found correctly')
@@ -134,9 +144,27 @@ if __name__ == '__main__':
               
         params = curve_fit(fit_sigmoid_grad,np.arange(BF.gradient.size),BF.gradient,p0 = [1,best,Aest])
         print('a: ',params[0][0], 'b: ', params[0][1], 'A: ',params[0][2])
-        flow_params[file] = [params[0][0],params[0][1],params[0][2]]
         
-              
+        flow_rate = fit_sigmoid_grad(x =params[0][1],a = params[0][0],b=params[0][1],A=params[0][2])
+        
+        flow_params[file] = [params[0][0],params[0][1],params[0][2],flow_rate]
+    
+        '''    
+    
+        # here you have the gradient 
+        
+        peaks = find_peaks(BF.gradient)
+        print(peaks)
+        peak = peaks[0][0]
+        
+        
+        
+        max_flow_rate = BF.gradient[peak]
+        
+        
+        flow_params[file] = max_flow_rate
+        
+        print(flow_params)
     save(flow_params, dpath, name)
               
               
