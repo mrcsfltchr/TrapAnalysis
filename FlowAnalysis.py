@@ -14,7 +14,7 @@ import sys
 from scipy.optimize import curve_fit
 import os
 from scipy.signal import find_peaks
-
+from matplotlib import pyplot as plt
 
 
 def get_video_paths(dir_path):
@@ -75,7 +75,7 @@ def save(dictionary, save_path, name):
     df = pd.DataFrame.from_dict(dictionary)
     
     
-    df.to_csv(save_path+name+'flowrates.csv')
+    df.to_csv(save_path+name)
     
     
     
@@ -86,9 +86,18 @@ if __name__ == '__main__':
     #user also supplies a name for the final output file containing the sigmoid rate and half intensity point parameters
     
     
+    #set optional flags to false by default
+    plotmode = False
+    
+    
     dpath = sys.argv[1]
     name = sys.argv[2]
-        
+    
+    if len(sys.argv) >3:
+        if sys.argv[3] == '--plot':
+            plotmode = True
+            
+            
     print('directory chosen is '+dpath)
     print('output filename: ' + name)
     
@@ -96,8 +105,8 @@ if __name__ == '__main__':
     
     #initialise dictionary to store parameters
     flow_params = {}
-    flow_params['Rows'] = ['Rate']
-    
+    #flow_params['Rows'] = ['Rate']
+    flow_params['Rows'] = ['Arrival Time']
     BF = BackgroundFinder()
     
     ret, file_list,_,_ = get_video_paths(dpath)
@@ -109,6 +118,11 @@ if __name__ == '__main__':
         sys.exit()
               
               
+    if plotmode:
+        figg,axg = plt.subplots(1,1)
+        
+    firstdone = False
+    flow_peak_pos = []
     for file in file_list:
         #create frame buffer variable, this is rewritten for each video.
         #video only loaded into local variable within the function, get_background.
@@ -126,7 +140,14 @@ if __name__ == '__main__':
         ret = BF.get_data_gradient()
         print(BF.gradient)
         BF.smooth_gradient()
-        print(BF.gradient)
+        
+        if plotmode:
+            
+            axg.plot(BF.gradient)
+            
+            plt.show()
+                
+            
         
         '''
         
@@ -154,17 +175,24 @@ if __name__ == '__main__':
         # here you have the gradient 
         
         peaks = find_peaks(BF.gradient)
-        print(peaks)
+        
         peak = peaks[0][0]
         
         
         
+        
         max_flow_rate = BF.gradient[peak]
+        flow_peak_pos.append(peak)
         
+        #flow_params[file] = max_flow_rate
         
-        flow_params[file] = max_flow_rate
-        
-        print(flow_params)
-    save(flow_params, dpath, name)
+    
+    print(flow_peak_pos)
+    med_time_arrival = np.median(np.array(flow_peak_pos))
+    label = dpath[-2:-1]
+    flow_params[label]= med_time_arrival
+    print(flow_params)
+    save(flow_params, './'+label, name)
               
-              
+    #Takes average of the arrival times for a given chamber and records it.
+          

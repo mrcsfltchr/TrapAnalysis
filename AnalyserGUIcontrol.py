@@ -282,15 +282,15 @@ class AnalyserPanel(QWidget):
 
                         
                 
-            t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
-            #t0 = 138
+            #t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
+            t0 = 0
             self.AControl.t0selector.setCurrentText(str(t0))
             
             if self.old:
                 tmax = t0 + 1200
-            #elif self.borstel:
-             #   tmax = t0 + 600 - 140
-              #  print('video tmax is: ',self.analyser.videolength, 'tmax is: ',tmax)
+            elif self.borstel:
+                tmax = self.analyser.videolength - 100
+                
             else:    
                 tmax = t0 +600
             
@@ -1003,8 +1003,6 @@ class AnalyserPanel(QWidget):
 
         #first use the background finder to find the frame in which to threshold intensity
         if self.borstel:
-            print('Borstel mode activated for background finder: ', self.borstel)
-            
             self.bgf.get_background(self.analyser.frames,self.borstel)
         else:
             self.bgf.get_background(self.analyser.frames)

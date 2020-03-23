@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
         flowrates = data[0,2:]
         
-        flow_file.write(str(np.mean(flowrates)) + ',')
+        flow_file.write(file[-6:-4]+ ','+str(np.mean(flowrates))+'\n') 
         
     flow_file.close()
     

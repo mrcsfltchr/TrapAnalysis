@@ -93,14 +93,19 @@ class BackgroundFinder(object):
         self.gradient = gaussian(self.gradient,sigma)
         
         
-    def get_background(self,frames_buffer):
+    def get_background(self,frames_buffer,borstel=False):
 
         #frames_buffer is a tifffile object 
         
         #frames must be an array of shape, (Number of frames,Image Height, Image Width)
 
-        
-        frames = frames_buffer.asarray()
+        #if borstel:
+          #  frames = frames_buffer.asarray(slice(0,frames_buffer.imagej_metadata['frames']-140))
+            
+        #else:
+        frames = frames_buffer.asarray(slice(0,int(frames_buffer.imagej_metadata['frames']/2)))
+            
+            
         
         self.background_intens = np.median(frames,axis = (1,2))
         
