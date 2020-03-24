@@ -417,7 +417,7 @@ class Analyser(object):
                     plt.imshow(clip)
                     plt.show()
                     '''
-    def count_foreground_pixels(foreground):
+    def count_foreground_pixels(self,foreground):
         return (foreground > 0).shape[0]
     
                      
