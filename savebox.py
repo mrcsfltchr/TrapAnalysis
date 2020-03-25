@@ -112,8 +112,35 @@ class SaveBox(QWidget):
     
         self.save_thread.start()
     
+    def create_guv_uid(self, key):
+        
+        if len(key) == 1:
+            
+            key = '00'+key
+            
+        elif len(key) == 2:
+            
+            key = '0'+key
+            
+        return key
     
+    def relabel_dictionary(self, dictionary1):
+        
+        
+        dictionary2 = {}
+        
+        for key in list(dictionary1.keys()):
+            content = dictionary1.pop(key)
+            
+            key = self.create_guv_uid(key)
+            
+            dictionary2[key] = content
+        
+        
+        
+        return dictionary2
 
+   
     def go_on_and_save(self):
 
 
@@ -163,18 +190,20 @@ class SaveBox(QWidget):
         df = pd.DataFrame.from_dict(self.rffatrace,orient='index').transpose().fillna('')
         
         df.to_csv(self.sd+'detected_at_beginning_filtered_Areas' + '_' + self.save_Date.text()+'_' + self.save_Time.text()+ '.csv')
+        
+        d
         #Save Detected Vesicle Centres. these are serialised using pickle as do not anticipate the user wanting to use the detected centre coordinates outside of python
 
-        file = open(self.sd + 'Centres' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.txt','wb')
+        #file = open(self.sd + 'Centres' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.txt','wb')
         
 
-        pickle.dump(self.centres,file,pickle.HIGHEST_PROTOCOL)
-        file = open(self.sd + 'Detected_from_beginning_Centres' +'_' + self.save_Date.text()+'_' + self.save_Time.text()+'.txt','wb')
-        pickle.dump(self.firstcentres,file,pickle.HIGHEST_PROTOCOL)
+        #pickle.dump(self.centres,file,pickle.HIGHEST_PROTOCOL)
+        #file = open(self.sd + 'Detected_from_beginning_Centres' +'_' + self.save_Date.text()+'_' + self.save_Time.text()+'.txt','wb')
+        #pickle.dump(self.firstcentres,file,pickle.HIGHEST_PROTOCOL)
 
         #save t0 and tmax
 
-        np.savetxt(self.sd + '/bookendtimes' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv',self.bookends,delimiter = ',')
+        #np.savetxt(self.sd + '/bookendtimes' + '_' + self.save_Date.text()+'_'+self.save_Time.text()+ '.csv',self.bookends,delimiter = ',')
 
 
 
@@ -189,57 +218,67 @@ class SaveBox(QWidget):
 
         #Save intensity traces
 
+        #self.intensities = self.relabel_dictionary(self.intensities)
+        
+        #df = pd.DataFrame.from_dict(self.intensities,orient = 'index').transpose().fillna('')
 
-        df = pd.DataFrame.from_dict(self.intensities,orient = 'index').transpose().fillna('')
+        #df.to_csv(self.sd + 'Intensities' + vid_id+ '.csv')
 
-        df.to_csv(self.sd + 'Intensities' + vid_id+ '.csv')
+        #df = pd.DataFrame.from_dict(self.fintensities,orient = 'index').transpose().fillna('')
 
-        df = pd.DataFrame.from_dict(self.fintensities,orient = 'index').transpose().fillna('')
+        #df.to_csv(self.sd + 'filtered_Intensities' + vid_id+ '.csv')
 
-        df.to_csv(self.sd + 'filtered_Intensities' + vid_id+ '.csv')
-
+        self.firstintensities = self.relabel_dictionary(self.firstintensities)
+        
         df = pd.DataFrame.from_dict(self.firstintensities,orient = 'index').transpose().fillna('')
 
         df.to_csv(self.sd + 'detected_at_beginning_Intensities' + vid_id+ '.csv')
 
+        self.ffintensities = self.relabel_dictionary(self.ffintensities)
+        
         df = pd.DataFrame.from_dict(self.ffintensities,orient = 'index').transpose().fillna('')
         
         df.to_csv(self.sd + 'detected_at_beginning_non_filtered_Intensities' + '_' + vid_id+ '.csv')        
         
-        df = pd.DataFrame.from_dict(self.rffitrace,orient = 'index').transpose().fillna('')
-        print(df)
+        #df = pd.DataFrame.from_dict(self.rffitrace,orient = 'index').transpose().fillna('')
+        #print(df)
         
-        df.to_csv(self.sd + 'detected_at_beginning_filtered_Intensities' + '_' + vid_id+ '.csv')  
+        #df.to_csv(self.sd + 'detected_at_beginning_filtered_Intensities' + '_' + vid_id+ '.csv')  
         #Save Areas
 
-        df = pd.DataFrame.from_dict(self.areas,orient = 'index').transpose().fillna('')
+        #df = pd.DataFrame.from_dict(self.areas,orient = 'index').transpose().fillna('')
 
-        df.to_csv(self.sd + 'Areas' + vid_id+ '.csv')
+        #df.to_csv(self.sd + 'Areas' + vid_id+ '.csv')
 
-        df = pd.DataFrame.from_dict(self.fareas,orient = 'index').transpose().fillna('')
+        #df = pd.DataFrame.from_dict(self.fareas,orient = 'index').transpose().fillna('')
 
-        df.to_csv(self.sd + 'filtered_Areas' + vid_id + '.csv')
+        #df.to_csv(self.sd + 'filtered_Areas' + vid_id + '.csv')
 
-        df = pd.DataFrame.from_dict(self.firstareas,orient = 'index').transpose().fillna('')
+        #df = pd.DataFrame.from_dict(self.firstareas,orient = 'index').transpose().fillna('')
 
-        df.to_csv(self.sd + 'Detected_at_beginning_Areas' +vid_id+ '.csv')
+        #df.to_csv(self.sd + 'Detected_at_beginning_Areas' +vid_id+ '.csv')
 
+        self.ffareas = self.relabel_dictionary(self.ffareas)
+        
         df = pd.DataFrame.from_dict(self.ffareas,orient = 'index').transpose().fillna('')
 
         df.to_csv(self.sd + 'Detected_at_beginning_non_filtered_Areas' +vid_id+ '.csv')
         
-        df = pd.DataFrame.from_dict(self.rffatrace,orient = 'index').transpose().fillna('')
+        #df = pd.DataFrame.from_dict(self.rffatrace,orient = 'index').transpose().fillna('')
 
-        df.to_csv(self.sd + 'Detected_at_beginning_filtered_Areas' +vid_id+ '.csv')
+        #df.to_csv(self.sd + 'Detected_at_beginning_filtered_Areas' +vid_id+ '.csv')
         #Save Detected Vesicle Centres. these are serialised using pickle as do not anticipate the user wanting to use the detected centre coordinates outside of python
 
-        file = open(self.sd + 'Centres' + vid_id + '.txt','wb')
+        #file = open(self.sd + 'Centres' + vid_id + '.txt','wb')
         
+        
+        #pickle.dump(self.centres,file,pickle.HIGHEST_PROTOCOL)
 
-        pickle.dump(self.centres,file,pickle.HIGHEST_PROTOCOL)
+
+        self.firstcentres = self.relabel_dictionary(self.firstcentres)
         file = open(self.sd + 'Detected_from_beginning_Centres' +vid_id+'.txt','wb')
         pickle.dump(self.firstcentres,file,pickle.HIGHEST_PROTOCOL)
-
+       
         #save t0 and tmax
 
         np.savetxt(self.sd + '/bookendtimes' + vid_id + '.csv',self.bookends,delimiter = ',')

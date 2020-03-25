@@ -153,6 +153,7 @@ class Analyser(object):
             
         traps,labels = self.trapgetter.remove_duplicates()
 
+        '''
         if self.videopath.find('Pos')+3 == '0':
             self.analyser.videopos = '9'
         else:    
@@ -165,7 +166,7 @@ class Analyser(object):
         labels = add(prelabels,labels)
         
         labels = labels.astype(int)
-        
+        '''
         self.trapgetter.labels = labels
         
         return traps,labels
