@@ -74,13 +74,13 @@ for i in range(0,len(TPfile_list)):
     BTarray = []
     missing_labels = []
     for i in range(0,len(positions[:,0])):
-        label = str(int(positions[:,0][i]))
+        #label = str(int(positions[:,0][i]))
         #need to force label to be in right format
-        #label = str(int(label))
-        #if len(label) == 1:
-         #   label = '00'+label
-        #elif len(label) ==2:
-         #   label = '0'+label
+        label = str(int(positions[:,0][i]))
+        if len(label) == 1:
+            label = '00'+label
+        elif len(label) ==2:
+            label = '0'+label
         
         try:
             BTarray.append(dfBT[label][0])

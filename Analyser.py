@@ -520,7 +520,7 @@ class Analyser(object):
                     img[rr,cc] = self.clips[self.active_labels == label][0][rr,cc]
         
                     try:
-                        pixelcount = self.count_foreground_pixels(testclip)
+                        pixelcount = self.count_foreground_pixels(testclip != 0)
                 
                         self.firstareatrace[str(label)].append(pixelcount)
                         #self.areatrace[str(label)].append(self.extract_area(testclip,kernel,clip))
@@ -529,7 +529,7 @@ class Analyser(object):
                         self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
                     except KeyError:
                         
-                        pixelcount = self.count_foreground_pixels(testclip)
+                        pixelcount = self.count_foreground_pixels(testclip != 0)
                 
                         self.firstareatrace[str(label)]=[pixelcount]                       
                         #self.areatrace[str(label)] = [self.extract_area(testclip,kernel,clip)]
@@ -608,7 +608,7 @@ class Analyser(object):
             img[rr,cc] = firstclip[0][rr,cc]
 
             try:
-                pixelcount = self.count_foreground_pixels(testclip)
+                pixelcount = self.count_foreground_pixels(testclip != 0)
                 
                 self.firstareatrace[str(label)].append(pixelcount)            
                 self.areatrace[str(label)].append(self.extract_area(testclip,kernel,firstclip))
@@ -617,7 +617,7 @@ class Analyser(object):
                 self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
                 
-                pixelcount = self.count_foreground_pixels(testclip)
+                pixelcount = self.count_foreground_pixels(testclip != 0)
                 self.areatrace[str(label)] = [self.extract_area(testclip,kernel,firstclip)]
                 self.firstareatrace[str(label)]= [pixelcount]
                 
