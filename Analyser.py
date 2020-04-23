@@ -419,15 +419,19 @@ class Analyser(object):
                     plt.show()
                     '''
     def count_foreground_pixels(self,foreground):
-        return (foreground > 0).shape[0]
+        #print(foreground[foreground > 0].shape[0])
+        return foreground[foreground > 0].shape[0]
     
                      
-    def extract_area(self,testclip,kernel,clip):
+    def extract_area(self,clip):
+        # this function takes in a clip of the image, unbinarised
+        kernel = np.ones((3,3),np.uint8)
         #kernel is the 2D spreading function which dilates the edges in a process similar to convolution but where the convolution is performed conditionally on a foreground pixel not being completely surrounded by other foreground pixels
-        
-        testclip = cv2.normalize(src=testclip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
-                    
-        opening = cv2.morphologyEx(testclip,cv2.MORPH_OPEN,kernel,iterations = 2)
+        clip = clip.reshape(31,31)
+        #testclip = cv2.normalize(src=testclip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
+        clip8 = (clip/256).astype('uint8')     
+        ret, thresh = cv2.threshold(clip8,0,255,cv2.THRESH_OTSU)
+        opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel,iterations = 2)
         
         #sure background area
         sure_bg = cv2.dilate(opening,kernel,iterations=3)
@@ -439,17 +443,20 @@ class Analyser(object):
         sure_fg = np.uint8(sure_fg)
         unknown = cv2.subtract(sure_bg,sure_fg)
         
-        ret, markers = cv2.connectedComponents(sure_fg)
+        ret, markers = cv2.connectedComponents(sure_fg,ltype = cv2.CV_32S)
         markers = markers +1
         markers[unknown==255] = 0
-        clip = clip.reshape(31,31)
-        clip = smooth(clip,sigma =1)
         
-
-        nclip = cv2.normalize(src=clip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
-        gclip = cv2.cvtColor(nclip,cv2.COLOR_GRAY2BGR)
+        clip8 = smooth(clip8,sigma =1)
+        
+        #plt.imshow(clip8)
+        #plt.show()
+        #nclip = cv2.normalize(src=clip,dst=None,alpha = 0,beta = 255,norm_type = cv2.NORM_MINMAX,dtype = cv2.CV_8UC1)
+        gclip = cv2.cvtColor(clip8,cv2.COLOR_GRAY2RGB)
         markers = cv2.watershed(gclip,markers)
-        pixelarea = np.argwhere(markers == 2).shape[0]
+        
+        #Update code here to decide sensibly which 
+        pixelarea = markers[markers ==2].shape[0]
         
         
         return pixelarea
@@ -520,20 +527,20 @@ class Analyser(object):
                     img[rr,cc] = self.clips[self.active_labels == label][0][rr,cc]
         
                     try:
-                        pixelcount = self.count_foreground_pixels(testclip != 0)
+                        #pixelcount = self.extract_area(clip)
                 
-                        self.firstareatrace[str(label)].append(pixelcount)
+                        #self.firstareatrace[str(label)].append(pixelcount)
                         #self.areatrace[str(label)].append(self.extract_area(testclip,kernel,clip))
-                        self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],3)
+                        #self.filtered_areatrace[str(label)] = smooth(self.firstareatrace[str(label)],3)
         
                         self.secondintensitytrace[str(label)].append(np.average(img[img > 0]))
                     except KeyError:
                         
-                        pixelcount = self.count_foreground_pixels(testclip != 0)
+                        #pixelcount = self.extract_area(clip)
                 
-                        self.firstareatrace[str(label)]=[pixelcount]                       
+                        #self.firstareatrace[str(label)]=[pixelcount]                       
                         #self.areatrace[str(label)] = [self.extract_area(testclip,kernel,clip)]
-                        self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],3)
+                        #self.filtered_areatrace[str(label)]=smooth(self.firstareatrace[str(label)],3)
                         self.secondintensitytrace[str(label)] = [np.average(img[img>0])]
         
         
@@ -591,9 +598,9 @@ class Analyser(object):
 
 
         try:
-            self.firstsecondareatrace[str(label)].append(self.extract_area(testclip,kernel,firstclip))
+            self.firstsecondareatrace[str(label)].append(self.extract_area(firstclip))
         except KeyError:
-            self.firstsecondareatrace[str(label)] = [self.extract_area(testclip,kernel,firstclip)]
+            self.firstsecondareatrace[str(label)] = [self.extract_area(firstclip)]
 
         dt = distance_transform_edt(testclip)
 
@@ -608,17 +615,17 @@ class Analyser(object):
             img[rr,cc] = firstclip[0][rr,cc]
 
             try:
-                pixelcount = self.count_foreground_pixels(testclip != 0)
+                pixelcount = self.extract_area(firstclip)
                 
                 self.firstareatrace[str(label)].append(pixelcount)            
-                self.areatrace[str(label)].append(self.extract_area(testclip,kernel,firstclip))
+                self.areatrace[str(label)].append(self.extract_area(firstclip))
                 self.filtered_firstareatrace[str(label)] = smooth(self.firstareatrace[str(label)],3)
 
                 self.firstsecondintensitytrace[str(label)].append(np.average(img[img > 0]))
             except KeyError:
                 
-                pixelcount = self.count_foreground_pixels(testclip != 0)
-                self.areatrace[str(label)] = [self.extract_area(testclip,kernel,firstclip)]
+                pixelcount = self.extract_area(firstclip)
+                self.areatrace[str(label)] = [self.extract_area(firstclip)]
                 self.firstareatrace[str(label)]= [pixelcount]
                 
                 self.filtered_firstareatrace[str(label)]=smooth(self.firstareatrace[str(label)],3)
