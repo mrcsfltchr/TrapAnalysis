@@ -10,7 +10,7 @@ class BackgroundFinder(object):
     def __init__(self):
         
         self.background_intens = None
-
+        self.background_frame = 0
         self.popt = None
         self.pcov = None
         
@@ -99,14 +99,15 @@ class BackgroundFinder(object):
         
         #frames must be an array of shape, (Number of frames,Image Height, Image Width)
 
-        #if borstel:
-          #  frames = frames_buffer.asarray(slice(0,frames_buffer.imagej_metadata['frames']-140))
-            
-        #else:
-        frames = frames_buffer.asarray(slice(0,int(frames_buffer.imagej_metadata['frames']/2)))
+        if borstel:
+            self.background_frame = 300
             
             
-        
+        else:
+            self.background_frame = int(frames_buffer.imagej_metadata['frames']/2)
+            print(self.background_frame)
+            
+        frames = frames_buffer.asarray(slice(0,self.background_frame)) 
         self.background_intens = np.median(frames,axis = (1,2))
         
 

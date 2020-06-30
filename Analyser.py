@@ -492,10 +492,12 @@ class Analyser(object):
         last_few_frames = self.frames.asarray(slice(self.videolength-5,self.videolength))
         self.bgintens = np.average(last_few_frames[:,self.bgcentrecoords[0]-3:self.bgcentrecoords[0]+3,self.bgcentrecoords[1]-3:self.bgcentrecoords[1]+3],axis = (1,2))
 
-    def extract_background(self,maxlen):
-        last_few_frames = self.frames.asarray(slice(self.videolength-5,self.videolength))
-        
-        self.bgintens = np.average(last_few_frames)
+    def extract_background(self,maxlen,borstel):
+        last_few_frames = self.frames.asarray(slice(maxlen-5,maxlen))
+        if borstel:
+            self.bgintens = 3750
+        else:
+            self.bgintens = np.average(last_few_frames)
 
 
 
@@ -860,14 +862,22 @@ class Analyser(object):
 
             
             self.bg_sub_firstintensity_trace[key] = np.array(self.firstintensitytrace[key]) -self.bgintens
+            initial_I = self.bg_sub_firstintensity_trace[key][0]
+            initial_I = np.array([initial_I])
             
             self.second_bg_fsi_trace[key] = np.array(self.firstsecondintensitytrace[key]) -self.bgintens
 
+            #
             self.filtered_first_intensity_trace[key] = smooth(self.bg_sub_firstintensity_trace[key],sigma)
-            max_data = np.max(self.filtered_first_intensity_trace[key])
+            self.filtered_first_intensity_trace[key] = smooth(self.firstintensitytrace[key],sigma)
+            
+            max_data = np.max(np.absolute(self.filtered_first_intensity_trace[key]))
 
+        
             self.filtered_first_intensity_trace[key] = self.filtered_first_intensity_trace[key]/max_data
-            print('This is the filtered data, ' ,self.filtered_first_intensity_trace[key])
+            self.filtered_first_intensity_trace[key] = np.concatenate((initial_I,self.filtered_first_intensity_trace[key]))
+            
+            print('This is the initial Area, ' ,self.filtered_first_intensity_trace[key][0])
 
 
     def heat_data_generator(self):

@@ -286,20 +286,19 @@ class AnalyserPanel(QWidget):
             #t0 = 138
             self.AControl.t0selector.setCurrentText(str(t0))
             
-            print("old option here is, ", self.old)
-            if not self.old:
+            if self.old:
                 tmax = t0 + 1200
-            elif self.borstel:
-                tmax = t0+600
-                print('video tmax is: ',self.analyser.videolength, 'tmax is: ',tmax)
+            #elif self.borstel:
+             #   tmax = t0 + 600 - 140
+              #  print('video tmax is: ',self.analyser.videolength, 'tmax is: ',tmax)
             else:    
                 tmax = t0 +600
-            print('tmaxset as ', tmax) 
+            
             if tmax > self.analyser.videolength:
                 self.AControl.tmaxselector.setCurrentText(str(self.analyser.videolength - 1))
             else:
                 self.AControl.tmaxselector.setCurrentText(str(tmax))
-            print('final frame of analysis set as ', self.AControl.tmaxselector.currentText())    
+                
             self.run_just_analysis()
             
             self.remove_vesicles_which_moved(self.analyser.filtered_first_intensity_trace)
@@ -840,7 +839,7 @@ class AnalyserPanel(QWidget):
         self.analyser.get_clips_alt()
         self.analyser.classify_clips()
         self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()))
-        self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()),borstel)
+        self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()))
         self.analyser.subtract_background()
     
         print(list(self.analyser.bg_sub_intensity_trace.keys()))
@@ -1476,17 +1475,14 @@ if __name__ == '__main__':
     old = False
     headless = False
     borstel = False
-    print("sys argv array has length: ", len(sys.argv))
     if len(sys.argv) >=2:
         headless = True
         videodir = sys.argv[1]
         
     if len(sys.argv) > 2:
         old = sys.argv[2]
-        print("old is set as,",old)
     if len(sys.argv) > 3:
         borstel = sys.argv[3]
-        print("borstel option, ", borstel)
         print("borstel on")
         
     if not QtWidgets.QApplication.instance():
