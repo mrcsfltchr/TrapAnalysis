@@ -871,7 +871,7 @@ class Analyser(object):
             self.filtered_first_intensity_trace[key] = smooth(self.bg_sub_firstintensity_trace[key],sigma)
             self.filtered_first_intensity_trace[key] = smooth(self.firstintensitytrace[key],sigma)
             
-            max_data = np.max(np.absolute(self.filtered_first_intensity_trace[key]))
+            max_data = np.max(sself.filtered_first_intensity_trace[key])
 
         
             self.filtered_first_intensity_trace[key] = self.filtered_first_intensity_trace[key]/max_data
