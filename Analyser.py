@@ -492,7 +492,7 @@ class Analyser(object):
         last_few_frames = self.frames.asarray(slice(self.videolength-5,self.videolength))
         self.bgintens = np.average(last_few_frames[:,self.bgcentrecoords[0]-3:self.bgcentrecoords[0]+3,self.bgcentrecoords[1]-3:self.bgcentrecoords[1]+3],axis = (1,2))
 
-    def extract_background(self,maxlen,borstel):
+    def extract_background(self,maxlen,borstel=False):
         last_few_frames = self.frames.asarray(slice(maxlen-5,maxlen))
         if borstel:
             self.bgintens = 3750

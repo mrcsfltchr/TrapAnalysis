@@ -287,7 +287,7 @@ class AnalyserPanel(QWidget):
             self.AControl.t0selector.setCurrentText(str(t0))
             
             print("old option here is, ", self.old)
-            if not self.old:
+            if self.old:
                 tmax = t0 + 1200
             elif self.borstel:
                 tmax = t0+600
@@ -840,7 +840,7 @@ class AnalyserPanel(QWidget):
         self.analyser.get_clips_alt()
         self.analyser.classify_clips()
         self.analyser.analyse_frames(int(self.AControl.tmaxselector.currentText()))
-        self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()),borstel)
+        self.analyser.extract_background(int(self.AControl.tmaxselector.currentText()))
         self.analyser.subtract_background()
     
         print(list(self.analyser.bg_sub_intensity_trace.keys()))
