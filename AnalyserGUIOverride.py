@@ -171,9 +171,16 @@ class AnalyserPanel(QWidget):
         
         self.combo_switch_off = True
             
+        ####################################################################### override here ########################################################################
+        
+        
         #choice to override the automatically detected frame in which vesicles are found.
         self.manual = True
-        self.manual_trap_frame = 300
+        self.manual_trap_frame = 375
+
+        ###############################################################################################################################################################
+
+
 
         #flags
         self.trap_bool = False
@@ -246,14 +253,17 @@ class AnalyserPanel(QWidget):
         counter = 0
         
         #New code below added for OmpF fusion experiment, poor detection
-        # Also set self.autolaucnh.overridet0flag = True
-        t0 = 400
-        self.autolaunch.t0selector.setCurrentText(str(t0))
+        # # Also set self.autolaucnh.overridet0flag = True
+        # t0 = 400
+        # self.autolaunch.t0selector.setCurrentText(str(t0))
 
         for video_path in self.dir_path_list:
+            ####################################################################### manually set t0 ##########################################################################
 
-            # t0 = 320
-            # self.autolaunch.t0selector.setCurrentText(str(t0))
+            t0 = 375
+
+            ##################################################################################################################################################################
+            self.autolaunch.t0selector.setCurrentText(str(t0))
             counter +=1
             print(video_path)
             if video_path.find('Pos')+3 == '0':
@@ -295,7 +305,7 @@ class AnalyserPanel(QWidget):
                         
                 
             #t0 = int(self.AControl.t0selector.currentText()) - self.start_offset
-            t0 = t0 - self.start_offset
+            t0 = max(0,t0 - self.start_offset)
             self.AControl.t0selector.setCurrentText(str(t0))
             
             print("old option here is, ", self.old)
@@ -305,8 +315,12 @@ class AnalyserPanel(QWidget):
                 tmax = t0+600
                 print('video tmax is: ',self.analyser.videolength, 'tmax is: ',tmax)
             else:    
+
+                ################################################################# here can manually override end of experiment ##########################################
                 tmax = t0 +600
             print('tmaxset as ', tmax) 
+                #########################################################################################################################################################
+                
             if tmax > self.analyser.videolength:
                 self.AControl.tmaxselector.setCurrentText(str(self.analyser.videolength - 1))
             else:
@@ -1023,16 +1037,20 @@ class AnalyserPanel(QWidget):
         else:
             self.bgf.get_background(self.analyser.frames)
             
-        self.bgf.get_data_gradient()
-        self.bgf.find_correct_gaussian_scale()
-
         self.AControl.has_been_overriden = True
         
         if self.autolaunch.overridet0flag:
+
+
+            
             t0 = int(self.autolaunch.t0selector.currentText())
             self.AControl.t0selector.setCurrentText(str(t0))
-        
+
+       
         else:
+
+            self.bgf.get_data_gradient()
+            self.bgf.find_correct_gaussian_scale()
             t0 = self.bgf.peak_max_arg
             if t0 == 0:
                 print('t0 is 0 so automatic detection of increase in background intensity has failed')

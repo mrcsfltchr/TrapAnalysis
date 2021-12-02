@@ -26,6 +26,7 @@ def get_video_paths(dir_path):
     
     video_filenames = os.listdir(os.getcwd())
     
+    print(video_filenames)
     #its possible that in this list there are erroneous files (i.e there are files that are not videos)
     
     #check files end with .tif and raise warning if not.
@@ -38,7 +39,7 @@ def get_video_paths(dir_path):
             
         
     
-            
+    print(dir_path)
     return ret, video_filenames, dir_path, initial_dir
     
     

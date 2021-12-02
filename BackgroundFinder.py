@@ -21,7 +21,7 @@ class BackgroundFinder(object):
         
         normalised_gradient = self.background_intens/np.max(self.background_intens[:-20])
         
-        self.gradient = np.gradient(normalised_gradient)
+        self.gradient = (-1)*np.gradient(normalised_gradient)
         
         return 0
     
@@ -104,7 +104,14 @@ class BackgroundFinder(object):
             
             
         else:
-            self.background_frame = int(frames_buffer.imagej_metadata['frames']/2)
+            try:
+                self.background_frame = int(frames_buffer.imagej_metadata['frames']/2)
+            except:
+                try:
+                    self.background_frame = int(frames_buffer.imagej_metadata['images']/2)
+                except:
+                    self.background_frame = int(len(frames_buffer.shaped_metadata)/2)
+                    
             print(self.background_frame)
             
         frames = frames_buffer.asarray(slice(0,self.background_frame)) 

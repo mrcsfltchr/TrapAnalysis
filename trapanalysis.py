@@ -37,19 +37,19 @@ class TrapGetter(object):
         #list the dimension of the box for export
         self.trapdimensions = [self.topboxrel,self.bottomboxrel,self.leftboxrel,self.rightboxrel]
         
-        try:
-            self.kernel = np.loadtxt(self.kernel_path,delimiter = ',')
-        except:
-            print('Kernel path is invalid')
+        #try:
+        #    self.kernel = np.loadtxt(self.kernel_path,delimiter = ',')
+        #except:
+        #    print('Kernel path is invalid')
             
             
     def set_kernel_path(self,path):
         self.kernel_path = path
     
     
-    def get_vesicle_positions(self,frame,override_otsu = False, threshold = None):
+    def get_vesicle_positions(self,frame,override_otsu = False, threshold = None, sigma = 2):
         self.frame = frame
-        frame = gaussian(frame,2,preserve_range=True)
+        frame = gaussian(frame,sigma,preserve_range=True)
         if not override_otsu:
             self.threshold = threshold_otsu(frame)
         
@@ -64,7 +64,7 @@ class TrapGetter(object):
         if mask[mask!=0].shape[0] > mask[mask==0].shape[0]:
             self.threshold = np.average(frame)+ 4*np.std(frame)
             print('Otsu threshold failed, has been overriden')
-        print(self.threshold)
+        #print(self.threshold)
         mask = np.zeros_like(frame)
         mask[frame > self.threshold] = 1
         
@@ -87,7 +87,7 @@ class TrapGetter(object):
         
         plt.show()   
         '''
-        print('First sight of traps counted ', self.trap_positions.shape[0])
+        #print('First sight of traps counted ', self.trap_positions.shape[0])
         
     
     def get_trap_positions(self,frame):
