@@ -1,6 +1,6 @@
 qimage2ndarray==1.7
 matplotlib==3.0.0
-numpy==1.15.2
+numpy==1.22.0
 QtPy==1.5.1
 Keras==2.2.4
 pandas==0.23.4
