@@ -4,7 +4,7 @@ numpy==1.15.2
 QtPy==1.5.1
 Keras==2.2.4
 pandas==0.23.4
-scipy==1.1.0
+scipy==1.10.0
 scikit_image==0.14.1
 tifffile==0.15.1
 PyQt4==4.11.4
